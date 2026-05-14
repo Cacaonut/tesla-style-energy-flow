@@ -545,8 +545,9 @@
     'load-power': Object.freeze({ x: -14, y: -28 }),
     'load-guide': Object.freeze({ x1: -32, y1: 12, x2: -32, y2: 68 }),
     'battery-label': Object.freeze({ x: -30, y: 82 }),
-    'battery-power': Object.freeze({ x: -12, y: 104 }),
-    'battery-pct': Object.freeze({ x: 10, y: 104 }),
+    'battery-power': Object.freeze({ x: -6, y: 104 }),
+    'battery-arrow': Object.freeze({ x: 10, y: 104 }),
+    'battery-pct': Object.freeze({ x: 22, y: 104 }),
     'battery-status': Object.freeze({ x: 30, y: 98 }),
     'battery-guide': Object.freeze({ x1: -38, y1: 42, x2: -38, y2: 70 }),
     'ev-label': Object.freeze({ x: -20, y: -138 }),
@@ -845,6 +846,7 @@
     'load-guide': Object.freeze({ id: 'flow-load-guide', attrs: Object.freeze(['x1', 'y1', 'x2', 'y2']) }),
     'battery-label': Object.freeze({ id: 'flow-battery-label', attrs: Object.freeze(['x', 'y']) }),
     'battery-power': Object.freeze({ id: 'flow-battery-power', attrs: Object.freeze(['x', 'y']) }),
+    'battery-arrow': Object.freeze({ id: 'flow-battery-arrow', attrs: Object.freeze(['x', 'y']) }),
     'battery-pct': Object.freeze({ id: 'flow-battery-pct', attrs: Object.freeze(['x', 'y']) }),
     'battery-status': Object.freeze({ id: 'flow-battery-status', attrs: Object.freeze(['x', 'y']) }),
     'battery-guide': Object.freeze({ id: 'flow-battery-guide', attrs: Object.freeze(['x1', 'y1', 'x2', 'y2']) }),
@@ -1680,6 +1682,7 @@
           .flow-label,
           .flow-power,
           .flow-pct,
+          .flow-arrow,
           .flow-status {
             fill: #f8fafc;
             text-shadow: 0 1px 2px rgba(2, 6, 23, 0.58);
@@ -1703,8 +1706,16 @@
             font-size: calc(14px * var(--flow-font-scale));
             font-weight: 600;
           }
+          .flow-arrow {
+            fill: #2ee89b;
+            font-size: calc(9px * var(--flow-font-scale));
+            font-weight: 800;
+          }
           #flow-battery-power {
             text-anchor: end;
+          }
+          #flow-battery-arrow {
+            text-anchor: middle;
           }
           #flow-battery-pct {
             text-anchor: start;
@@ -1741,6 +1752,7 @@
           .flow-node.inactive .flow-label,
           .flow-node.inactive .flow-power,
           .flow-node.inactive .flow-pct,
+          .flow-node.inactive .flow-arrow,
           .flow-node.inactive .flow-status {
             fill: rgba(148, 163, 184, 0.72) !important;
             opacity: 0.45;
@@ -1748,7 +1760,12 @@
             filter: none;
           }
           .flow-node.inactive .flow-node-guide {
-            opacity: 0;
+            opacity: 0.48;
+          }
+          .flow-node.inactive #flow-battery-arrow {
+            fill: #2ee89b !important;
+            opacity: 0.95;
+            filter: drop-shadow(0 0 5px rgba(46, 232, 155, 0.46));
           }
           .flow-node.inactive #flow-battery-pct {
             fill: #f8fafc !important;
@@ -1907,8 +1924,9 @@
                   <circle class="flow-node-bg" id="node-battery-bg" cx="0" cy="0" r="5"></circle>
                   <line class="flow-node-guide" id="flow-battery-guide" x1="0" y1="12" x2="0" y2="42"></line>
                   <text class="flow-label" id="flow-battery-label" x="0" y="67">${this._t('card.node.battery', 'Batteria')}</text>
-                  <text class="flow-power" id="flow-battery-power" x="-2" y="97" text-anchor="end">0.0 kW</text>
-                  <text class="flow-pct" id="flow-battery-pct" x="8" y="97" text-anchor="start">--%</text>
+                  <text class="flow-power" id="flow-battery-power" x="-8" y="97" text-anchor="end">0.0 kW</text>
+                  <text class="flow-arrow" id="flow-battery-arrow" x="4" y="97" text-anchor="middle"></text>
+                  <text class="flow-pct" id="flow-battery-pct" x="17" y="97" text-anchor="start">--%</text>
                   <text class="flow-status" id="flow-battery-status" x="0" y="118">${this._t('card.status.waiting', 'IN ATTESA')}</text>
                 </g>
 
@@ -2017,7 +2035,8 @@
       this._setText('#flow-load-power', this._formatKW(loadPower));
       this._setText('#flow-battery-power', batteryConfigured ? this._formatKW(batteryPower) : '');
       const batteryArrow = !batteryConfigured ? '' : (batteryPower > batteryMin ? '▲' : (batteryPower < -batteryMin ? '▼' : ''));
-      this._setText('#flow-battery-pct', batteryConfigured ? `${batteryArrow}${Math.round(batteryLevel)}%` : '');
+      this._setText('#flow-battery-arrow', batteryArrow);
+      this._setText('#flow-battery-pct', batteryConfigured ? `${Math.round(batteryLevel)}%` : '');
       this._setText('#flow-ev-label', ev1.labelText || this._t('card.node.ev', 'EV'));
       this._setText('#flow-ev-power', this._formatKW(ev1.power || 0));
       this._setText('#flow-ev-pct', ev1.batteryText || '--%');
@@ -2027,7 +2046,7 @@
 
       const batteryStatusEl = this.shadowRoot.querySelector('#flow-battery-status');
       if (batteryStatusEl) {
-        // Charge/discharge direction is shown via the arrow on #flow-battery-pct;
+        // Charge/discharge direction is shown via the separate green arrow.
         // the textual status word is intentionally suppressed (Tesla-style).
         this._setText('#flow-battery-status', '');
         batteryStatusEl.style.display = 'none';

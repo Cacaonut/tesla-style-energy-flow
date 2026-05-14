@@ -37,8 +37,20 @@ assert.match(
 
 assert.match(
   source,
-  /<text class="flow-pct" id="flow-battery-pct" x="8" y="97" text-anchor="start">--%<\/text>/,
-  'battery percent should sit on the same baseline as battery power, Tesla-app style'
+  /<text class="flow-arrow" id="flow-battery-arrow" x="4" y="97" text-anchor="middle"><\/text>/,
+  'battery charge direction should use a separate green arrow between power and percent'
+);
+
+assert.match(
+  source,
+  /<text class="flow-pct" id="flow-battery-pct" x="17" y="97" text-anchor="start">--%<\/text>/,
+  'battery percent should sit directly after the green arrow on the same baseline'
+);
+
+assert.doesNotMatch(
+  source,
+  /\.flow-node\.inactive \.flow-node-guide\s*\{\s*opacity: 0;\s*\}/,
+  'node guide lines should remain visible even when a value is below the flow threshold'
 );
 
 assert.match(
