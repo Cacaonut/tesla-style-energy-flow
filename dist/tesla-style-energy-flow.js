@@ -538,17 +538,17 @@
     'solar-label': Object.freeze({ x: -16, y: -108 }),
     'solar-power': Object.freeze({ x: 0, y: -86 }),
     'solar-guide': Object.freeze({ x1: -20, y1: -78, x2: -20, y2: 2 }),
-    'grid-label': Object.freeze({ x: 8, y: 78 }),
-    'grid-power': Object.freeze({ x: 24, y: 100 }),
+    'grid-label': Object.freeze({ x: 8, y: 58 }),
+    'grid-power': Object.freeze({ x: 22, y: 78 }),
     'grid-guide': Object.freeze({ x1: 4, y1: 34, x2: 4, y2: 64 }),
     'load-label': Object.freeze({ x: -36, y: -36 }),
     'load-power': Object.freeze({ x: -16, y: -14 }),
     'load-guide': Object.freeze({ x1: -32, y1: -4, x2: -32, y2: 68 }),
-    'battery-label': Object.freeze({ x: -30, y: 98 }),
-    'battery-power': Object.freeze({ x: -20, y: 120 }),
-    'battery-pct': Object.freeze({ x: -2, y: 80 }),
+    'battery-label': Object.freeze({ x: -30, y: 82 }),
+    'battery-power': Object.freeze({ x: -12, y: 104 }),
+    'battery-pct': Object.freeze({ x: 10, y: 104 }),
     'battery-status': Object.freeze({ x: 30, y: 98 }),
-    'battery-guide': Object.freeze({ x1: -38, y1: 56, x2: -38, y2: 86 }),
+    'battery-guide': Object.freeze({ x1: -38, y1: 42, x2: -38, y2: 70 }),
     'ev-label': Object.freeze({ x: -20, y: -138 }),
     'ev-power': Object.freeze({ x: -4, y: -110 }),
     'ev-pct': Object.freeze({ x: -6, y: 6 }),
@@ -878,7 +878,7 @@
     power_unit_mode: 'auto',
     font_scale: 1,
     ev_hide_when_idle: false,
-    scene_scale: 1.06,
+    scene_scale: 1,
     grid_invert: false,
     battery_invert: false,
     ev_label: '',
@@ -1515,7 +1515,7 @@
       const showLabelsClass = cfg.show_labels ? '' : 'hide-labels';
       const titleText = String(cfg.title || '');
       const titleHtml = (cfg.show_header !== false && titleText) ? `<div class="card-title">${titleText}</div>` : '';
-      const sceneScale = clamp(safeNum(cfg.scene_scale, 1.06), 0.6, 1.4);
+      const sceneScale = clamp(safeNum(cfg.scene_scale, 1), 0.6, 1.4);
       const fontScale = clamp(safeNum(cfg.font_scale, 1), 0.75, 1.35);
       const pathD = (id, configKey) => p[id] || cfg.paths?.[configKey] || DEFAULT_CONFIG.paths[configKey];
       this._lastAppliedSceneFlowProfile = '';
@@ -1541,14 +1541,14 @@
             color: var(--primary-text-color);
           }
           .scene {
-            padding: 10px;
+            padding: 0;
           }
           svg {
             width: 100%;
             height: auto;
             display: block;
-            border-radius: 12px;
-            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 16px;
+            border: 0;
             background: #020617;
           }
           .flow-scene-dim {
@@ -1565,37 +1565,42 @@
             filter: drop-shadow(0 0 6px rgba(255,255,255,0.35));
           }
           .flow-node-guide {
-            stroke: rgba(255, 255, 255, 0.78);
-            stroke-width: 1.15;
+            stroke: rgba(255, 255, 255, 0.5);
+            stroke-width: 1.35;
             stroke-linecap: round;
-            opacity: 0.95;
+            opacity: 0.86;
           }
           .flow-label,
           .flow-power,
           .flow-pct,
           .flow-status {
             fill: #f8fafc;
-            text-shadow: 0 1px 2px rgba(2, 6, 23, 0.55);
+            text-shadow: 0 1px 2px rgba(2, 6, 23, 0.42);
             text-anchor: middle;
-            font-family: sans-serif;
-            filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.95))
-                    drop-shadow(0 0 10px rgba(0, 0, 0, 0.78))
-                    drop-shadow(0 0 16px rgba(0, 0, 0, 0.52));
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            filter: drop-shadow(0 0 3px rgba(0, 0, 0, 0.82))
+                    drop-shadow(0 0 9px rgba(0, 0, 0, 0.62));
           }
           .flow-label {
             font-size: calc(10px * var(--flow-font-scale));
-            font-weight: 600;
-            letter-spacing: 0.05em;
+            font-weight: 700;
+            letter-spacing: 0.06em;
             text-transform: uppercase;
-            fill: #9ba3af;
+            fill: rgba(196, 200, 205, 0.72);
           }
           .flow-power {
-            font-size: calc(15px * var(--flow-font-scale));
+            font-size: calc(15.5px * var(--flow-font-scale));
             font-weight: 600;
           }
           .flow-pct {
-            font-size: calc(11px * var(--flow-font-scale));
-            font-weight: 700;
+            font-size: calc(14px * var(--flow-font-scale));
+            font-weight: 600;
+          }
+          #flow-battery-power {
+            text-anchor: end;
+          }
+          #flow-battery-pct {
+            text-anchor: start;
           }
           .flow-status {
             font-size: calc(8.5px * var(--flow-font-scale));
@@ -1608,9 +1613,8 @@
             text-shadow: 0 1px 2px rgba(2, 6, 23, 0.55);
             text-anchor: middle;
             font-family: sans-serif;
-            filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.95))
-                    drop-shadow(0 0 10px rgba(0, 0, 0, 0.78))
-                    drop-shadow(0 0 16px rgba(0, 0, 0, 0.52));
+            filter: drop-shadow(0 0 3px rgba(0, 0, 0, 0.82))
+                    drop-shadow(0 0 9px rgba(0, 0, 0, 0.62));
           }
           .roof-meta-label {
             font-size: calc(9px * var(--flow-font-scale));
@@ -1721,7 +1725,7 @@
           <div class="wrap ${showLabelsClass}">
             ${titleHtml}
             <div class="scene">
-              <svg viewBox="0 0 600 460" style="transform: scale(${sceneScale}); transform-origin: center;">
+              <svg viewBox="${300 - (300 / sceneScale)} ${230 - (230 / sceneScale)} ${600 / sceneScale} ${460 / sceneScale}">
                 <image id="flow-scene-image" href="${cfg.background}" x="0" y="0" width="600" height="460" preserveAspectRatio="xMidYMid slice"></image>
                 <rect class="flow-scene-dim" x="0" y="0" width="600" height="460"></rect>
 
@@ -1778,7 +1782,7 @@
                   <line class="flow-node-guide" id="flow-battery-guide" x1="0" y1="12" x2="0" y2="42"></line>
                   <text class="flow-label" id="flow-battery-label" x="0" y="67">${this._t('card.node.battery', 'Batteria')}</text>
                   <text class="flow-power" id="flow-battery-power" x="-2" y="97" text-anchor="end">0.0 kW</text>
-                  <text class="flow-pct" id="flow-battery-pct" x="4" y="97" text-anchor="start">--%</text>
+                  <text class="flow-pct" id="flow-battery-pct" x="8" y="97" text-anchor="start">--%</text>
                   <text class="flow-status" id="flow-battery-status" x="0" y="118">${this._t('card.status.waiting', 'IN ATTESA')}</text>
                 </g>
 
@@ -2303,7 +2307,7 @@
                 <input type="checkbox" data-path="ev_hide_when_idle" ${cfg.ev_hide_when_idle ? 'checked' : ''}>
               </div>
               <label>${this._t('editor.field_scene_scale', 'Scene Scale')}</label>
-              <input type="number" step="0.01" data-path="scene_scale" value="${safeNum(cfg.scene_scale, 1.06)}">
+              <input type="number" step="0.01" data-path="scene_scale" value="${safeNum(cfg.scene_scale, 1)}">
               <label>Font scale</label>
               <input type="number" step="0.05" min="0.75" max="1.35" data-path="font_scale" value="${safeNum(cfg.font_scale, 1)}">
               <label>EV 1 label</label>
