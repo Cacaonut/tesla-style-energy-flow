@@ -1882,7 +1882,8 @@
       this._setText('#flow-roof-b-current', `${roofBCurrent.toFixed(1)} A`);
       this._setText('#flow-load-power', this._formatKW(loadPower));
       this._setText('#flow-battery-power', batteryConfigured ? this._formatKW(batteryPower) : '');
-      this._setText('#flow-battery-pct', batteryConfigured ? `${Math.round(batteryLevel)}%` : '');
+      const batteryArrow = !batteryConfigured ? '' : (batteryPower > batteryMin ? '▲' : (batteryPower < -batteryMin ? '▼' : ''));
+      this._setText('#flow-battery-pct', batteryConfigured ? `${batteryArrow}${Math.round(batteryLevel)}%` : '');
       this._setText('#flow-ev-label', ev1.labelText || this._t('card.node.ev', 'EV'));
       this._setText('#flow-ev-power', this._formatKW(ev1.power || 0));
       this._setText('#flow-ev-pct', ev1.batteryText || '--%');
@@ -1892,19 +1893,10 @@
 
       const batteryStatusEl = this.shadowRoot.querySelector('#flow-battery-status');
       if (batteryStatusEl) {
-        if (!batteryConfigured) {
-          this._setText('#flow-battery-status', '');
-          batteryStatusEl.style.display = 'none';
-        } else if (batteryPower > batteryMin) {
-          this._setText('#flow-battery-status', this._t('card.status.charging', 'IN CARICA'));
-          batteryStatusEl.style.display = 'inline';
-        } else if (batteryPower < -batteryMin) {
-          this._setText('#flow-battery-status', this._t('card.status.discharging', 'IN SCARICA'));
-          batteryStatusEl.style.display = 'inline';
-        } else {
-          this._setText('#flow-battery-status', '');
-          batteryStatusEl.style.display = 'none';
-        }
+        // Charge/discharge direction is shown via the arrow on #flow-battery-pct;
+        // the textual status word is intentionally suppressed (Tesla-style).
+        this._setText('#flow-battery-status', '');
+        batteryStatusEl.style.display = 'none';
       }
 
       this._toggleNode('#node-solar-bg', solarPower > solarMin);
