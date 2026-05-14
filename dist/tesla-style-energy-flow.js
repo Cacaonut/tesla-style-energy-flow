@@ -1583,14 +1583,15 @@
                     drop-shadow(0 0 16px rgba(0, 0, 0, 0.52));
           }
           .flow-label {
-            font-size: calc(11px * var(--flow-font-scale));
+            font-size: calc(10px * var(--flow-font-scale));
             font-weight: 600;
             letter-spacing: 0.05em;
             text-transform: uppercase;
+            fill: #9ba3af;
           }
           .flow-power {
-            font-size: calc(12px * var(--flow-font-scale));
-            font-weight: 700;
+            font-size: calc(15px * var(--flow-font-scale));
+            font-weight: 600;
           }
           .flow-pct {
             font-size: calc(11px * var(--flow-font-scale));
