@@ -31,32 +31,38 @@ assert.match(
 
 assert.match(
   source,
-  /'solar-label': Object\.freeze\(\{ x: 0, y: -94 \}\),\s*'solar-power': Object\.freeze\(\{ x: 0, y: -72 \}\),\s*'solar-guide': Object\.freeze\(\{ x1: -20, y1: -56, x2: -20, y2: 16 \}\)/,
+  /'solar-label': Object\.freeze\(\{ x: -20, y: -94 \}\),\s*'solar-power': Object\.freeze\(\{ x: -20, y: -72 \}\),\s*'solar-guide': Object\.freeze\(\{ x1: -20, y1: -56, x2: -20, y2: 16 \}\)/,
   'day clear idle solar label, power and guide should sit closer to the PV modules'
 );
 
 assert.match(
   source,
-  /'grid-label': Object\.freeze\(\{ x: 22, y: 68 \}\),\s*'grid-power': Object\.freeze\(\{ x: 22, y: 88 \}\),\s*'grid-guide': Object\.freeze\(\{ x1: 4, y1: 26, x2: 4, y2: 64 \}\)/,
-  'day clear idle grid label and power should move down while keeping the guide line in place'
+  /'grid-label': Object\.freeze\(\{ x: 4, y: -14 \}\),\s*'grid-power': Object\.freeze\(\{ x: 4, y: 8 \}\),\s*'grid-guide': Object\.freeze\(\{ x1: 4, y1: 26, x2: 4, y2: 64 \}\)/,
+  'day clear idle grid label and power should sit above the grid guide line'
 );
 
 assert.match(
   source,
-  /'load-label': Object\.freeze\(\{ x: -14, y: -64 \}\),\s*'load-power': Object\.freeze\(\{ x: -14, y: -42 \}\),\s*'load-guide': Object\.freeze\(\{ x1: -32, y1: -6, x2: -32, y2: 68 \}\)/,
+  /'load-label': Object\.freeze\(\{ x: -32, y: -64 \}\),\s*'load-power': Object\.freeze\(\{ x: -32, y: -42 \}\),\s*'load-guide': Object\.freeze\(\{ x1: -32, y1: -6, x2: -32, y2: 68 \}\)/,
   'day clear idle house label and power should move up while the guide line reaches farther upward'
 );
 
 assert.match(
   source,
-  /<text class="flow-arrow" id="flow-battery-arrow" x="4" y="97" text-anchor="middle"><\/text>/,
+  /<text class="flow-arrow" id="flow-battery-arrow" x="0" y="97" text-anchor="middle"><\/text>/,
   'battery charge direction should use a separate green arrow between power and percent'
 );
 
 assert.match(
   source,
-  /<text class="flow-pct" id="flow-battery-pct" x="17" y="97" text-anchor="start">--%<\/text>/,
-  'battery percent should sit directly after the green arrow on the same baseline'
+  /<text class="flow-pct" id="flow-battery-pct" x="8" y="97" text-anchor="start">--%<\/text>/,
+  'battery percent should start close to the compact static value row'
+);
+
+assert.match(
+  source,
+  /const BATTERY_VALUE_ROW = Object\.freeze\(\{\s*arrowOffsetX: 8,\s*percentOffsetX: 16\s*\}\);/,
+  'battery value row spacing should keep power, arrow and percent visually grouped'
 );
 
 assert.match(
@@ -67,7 +73,7 @@ assert.match(
 
 assert.match(
   source,
-  /setAligned\('#flow-battery-arrow', powerX \+ 12, powerY\);[\s\S]*setAligned\('#flow-battery-pct', powerX \+ 25, powerY\);/,
+  /_setSvgAttrs\('#flow-battery-arrow', \{ x: powerX \+ BATTERY_VALUE_ROW\.arrowOffsetX, y: powerY \}\);[\s\S]*_setSvgAttrs\('#flow-battery-pct', \{ x: powerX \+ BATTERY_VALUE_ROW\.percentOffsetX, y: powerY \}\);/,
   'battery arrow and percent should stay locked to the battery power baseline'
 );
 
@@ -79,8 +85,32 @@ assert.match(
 
 assert.match(
   source,
-  /alignPair\('#flow-solar-label', '#flow-solar-power'\);[\s\S]*alignPair\('#flow-grid-label', '#flow-grid-power'\);[\s\S]*alignPair\('#flow-load-label', '#flow-load-power'\);[\s\S]*alignPair\('#flow-ev-label', '#flow-ev-power'\);[\s\S]*alignPair\('#flow-ev2-label', '#flow-ev2-power'\);/,
-  'middle-anchored headings should share the same x coordinate as their power values'
+  /const GUIDE_ALIGNED_TEXT_PAIRS = Object\.freeze\(\[[\s\S]*\['#flow-solar-label', '#flow-solar-power', '#flow-solar-guide'\],[\s\S]*\['#flow-grid-label', '#flow-grid-power', '#flow-grid-guide'\],[\s\S]*\['#flow-load-label', '#flow-load-power', '#flow-load-guide'\],[\s\S]*\['#flow-ev-label', '#flow-ev-power', '#flow-ev-guide'\],[\s\S]*\['#flow-ev2-label', '#flow-ev2-power', '#flow-ev2-guide'\][\s\S]*\]\);/,
+  'middle-anchored headings and values should share the same x coordinate as their guide lines'
+);
+
+assert.match(
+  source,
+  /const GUIDE_TEXT_CLEARANCE = Object\.freeze\(\{\s*base: 8,\s*scaleExtra: 6\s*\}\);/,
+  'guide line spacing should grow when font_scale grows'
+);
+
+assert.match(
+  source,
+  /_alignGuideTextClearance\(\) \{[\s\S]*const gap = this\._guideTextGap\(\);[\s\S]*const textTop = Math\.min\(labelY, powerY\);[\s\S]*const textBottom = Math\.max\(labelY, powerY\);[\s\S]*this\._moveGuideEndpoint\(guide, nearAttr, nextNear\)/,
+  'guide line endpoints should keep a font-scale-aware clearance from nearby labels and values'
+);
+
+assert.match(
+  source,
+  /_editorCommitEvent\(el\) \{[\s\S]*if \(el\.type === 'checkbox' \|\| el\.tagName === 'SELECT'\) return 'change';[\s\S]*return el\.dataset\.commit \|\| 'input';[\s\S]*\}/,
+  'visual editor text and number controls should emit config updates while typing'
+);
+
+assert.match(
+  source,
+  /const eventName = this\._editorCommitEvent\(el\);/,
+  'visual editor should use control-specific commit events'
 );
 
 assert.doesNotMatch(

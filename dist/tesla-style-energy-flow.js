@@ -14,6 +14,21 @@
     { value: 'fr', labelKey: 'editor.lang_fr' },
     { value: 'de', labelKey: 'editor.lang_de' }
   ]);
+  const BATTERY_VALUE_ROW = Object.freeze({
+    arrowOffsetX: 8,
+    percentOffsetX: 16
+  });
+  const GUIDE_ALIGNED_TEXT_PAIRS = Object.freeze([
+    ['#flow-solar-label', '#flow-solar-power', '#flow-solar-guide'],
+    ['#flow-grid-label', '#flow-grid-power', '#flow-grid-guide'],
+    ['#flow-load-label', '#flow-load-power', '#flow-load-guide'],
+    ['#flow-ev-label', '#flow-ev-power', '#flow-ev-guide'],
+    ['#flow-ev2-label', '#flow-ev2-power', '#flow-ev2-guide']
+  ]);
+  const GUIDE_TEXT_CLEARANCE = Object.freeze({
+    base: 8,
+    scaleExtra: 6
+  });
   const I18N = Object.freeze({
     it: {
       card: {
@@ -535,19 +550,19 @@
   });
 
   const DAY_CLEAR_IDLE_COMPONENTS = Object.freeze({
-    'solar-label': Object.freeze({ x: 0, y: -94 }),
-    'solar-power': Object.freeze({ x: 0, y: -72 }),
+    'solar-label': Object.freeze({ x: -20, y: -94 }),
+    'solar-power': Object.freeze({ x: -20, y: -72 }),
     'solar-guide': Object.freeze({ x1: -20, y1: -56, x2: -20, y2: 16 }),
-    'grid-label': Object.freeze({ x: 22, y: 68 }),
-    'grid-power': Object.freeze({ x: 22, y: 88 }),
+    'grid-label': Object.freeze({ x: 4, y: -14 }),
+    'grid-power': Object.freeze({ x: 4, y: 8 }),
     'grid-guide': Object.freeze({ x1: 4, y1: 26, x2: 4, y2: 64 }),
-    'load-label': Object.freeze({ x: -14, y: -64 }),
-    'load-power': Object.freeze({ x: -14, y: -42 }),
+    'load-label': Object.freeze({ x: -32, y: -64 }),
+    'load-power': Object.freeze({ x: -32, y: -42 }),
     'load-guide': Object.freeze({ x1: -32, y1: -6, x2: -32, y2: 68 }),
     'battery-label': Object.freeze({ x: -30, y: 82 }),
     'battery-power': Object.freeze({ x: -6, y: 104 }),
-    'battery-arrow': Object.freeze({ x: 10, y: 104 }),
-    'battery-pct': Object.freeze({ x: 22, y: 104 }),
+    'battery-arrow': Object.freeze({ x: 2, y: 104 }),
+    'battery-pct': Object.freeze({ x: 10, y: 104 }),
     'battery-status': Object.freeze({ x: 30, y: 98 }),
     'battery-guide': Object.freeze({ x1: -38, y1: 42, x2: -38, y2: 70 }),
     'ev-label': Object.freeze({ x: -20, y: -138 }),
@@ -1553,18 +1568,33 @@
         if (!binding || !values || typeof values !== 'object') return;
         const target = this.shadowRoot.querySelector(`#${binding.id}`);
         if (!target) return;
+        const attrs = {};
         binding.attrs.forEach((attr) => {
           if (!Object.prototype.hasOwnProperty.call(values, attr)) return;
-          const nextValue = String(values[attr]);
-          if (target.getAttribute(attr) !== nextValue) {
-            target.setAttribute(attr, nextValue);
-          }
-          applied = true;
+          attrs[attr] = values[attr];
         });
+        if (this._setSvgAttrs(target, attrs)) applied = true;
       });
       if (this._alignBatteryValueRow()) applied = true;
       if (this._alignLabelPowerColumns()) applied = true;
+      if (this._alignGuideTextClearance()) applied = true;
       if (applied && marker) this._lastAppliedSceneFlowComponentProfile = marker;
+      return applied;
+    }
+
+    _setSvgAttrs(targetOrSelector, attrs) {
+      const target = typeof targetOrSelector === 'string'
+        ? this.shadowRoot.querySelector(targetOrSelector)
+        : targetOrSelector;
+      if (!target || !attrs || typeof attrs !== 'object') return false;
+      let applied = false;
+      Object.entries(attrs).forEach(([attr, value]) => {
+        if (value === undefined || value === null) return;
+        const nextValue = String(value);
+        if (target.getAttribute(attr) === nextValue) return;
+        target.setAttribute(attr, nextValue);
+        applied = true;
+      });
       return applied;
     }
 
@@ -1573,42 +1603,67 @@
       if (!power) return false;
       const powerX = safeNum(power.getAttribute('x'), -8);
       const powerY = safeNum(power.getAttribute('y'), 97);
-      let applied = false;
-      const setAligned = (selector, x, y) => {
-        const target = this.shadowRoot.querySelector(selector);
-        if (!target) return;
-        const nextX = String(x);
-        const nextY = String(y);
-        if (target.getAttribute('x') !== nextX) {
-          target.setAttribute('x', nextX);
-          applied = true;
-        }
-        if (target.getAttribute('y') !== nextY) {
-          target.setAttribute('y', nextY);
-          applied = true;
-        }
-      };
-      setAligned('#flow-battery-arrow', powerX + 12, powerY);
-      setAligned('#flow-battery-pct', powerX + 25, powerY);
-      return applied;
+      const arrowApplied = this._setSvgAttrs('#flow-battery-arrow', { x: powerX + BATTERY_VALUE_ROW.arrowOffsetX, y: powerY });
+      const percentApplied = this._setSvgAttrs('#flow-battery-pct', { x: powerX + BATTERY_VALUE_ROW.percentOffsetX, y: powerY });
+      return arrowApplied || percentApplied;
     }
 
     _alignLabelPowerColumns() {
       let applied = false;
-      const alignPair = (labelSelector, powerSelector) => {
+      GUIDE_ALIGNED_TEXT_PAIRS.forEach(([labelSelector, powerSelector, guideSelector]) => {
         const label = this.shadowRoot.querySelector(labelSelector);
         const power = this.shadowRoot.querySelector(powerSelector);
         if (!label || !power) return;
-        const powerX = power.getAttribute('x');
-        if (powerX === null || label.getAttribute('x') === powerX) return;
-        label.setAttribute('x', powerX);
-        applied = true;
-      };
-      alignPair('#flow-solar-label', '#flow-solar-power');
-      alignPair('#flow-grid-label', '#flow-grid-power');
-      alignPair('#flow-load-label', '#flow-load-power');
-      alignPair('#flow-ev-label', '#flow-ev-power');
-      alignPair('#flow-ev2-label', '#flow-ev2-power');
+        const guide = this.shadowRoot.querySelector(guideSelector);
+        const targetX = guide?.getAttribute('x1') ?? power.getAttribute('x');
+        if (targetX === null) return;
+        if (this._setSvgAttrs(label, { x: targetX })) applied = true;
+        if (this._setSvgAttrs(power, { x: targetX })) applied = true;
+      });
+      return applied;
+    }
+
+    _guideTextGap() {
+      const fontScale = clamp(safeNum(this._config.font_scale, 1), 0.75, 1.35);
+      return GUIDE_TEXT_CLEARANCE.base + ((fontScale - 1) * GUIDE_TEXT_CLEARANCE.scaleExtra);
+    }
+
+    _moveGuideEndpoint(guide, attr, value) {
+      return this._setSvgAttrs(guide, { [attr]: Number(value.toFixed(2)) });
+    }
+
+    _alignGuideTextClearance() {
+      const gap = this._guideTextGap();
+      let applied = false;
+      GUIDE_ALIGNED_TEXT_PAIRS.forEach(([labelSelector, powerSelector, guideSelector]) => {
+        const label = this.shadowRoot.querySelector(labelSelector);
+        const power = this.shadowRoot.querySelector(powerSelector);
+        const guide = this.shadowRoot.querySelector(guideSelector);
+        if (!label || !power || !guide) return;
+
+        const labelY = safeNum(label.getAttribute('y'), 0);
+        const powerY = safeNum(power.getAttribute('y'), labelY);
+        const textTop = Math.min(labelY, powerY);
+        const textBottom = Math.max(labelY, powerY);
+        const y1 = safeNum(guide.getAttribute('y1'), 0);
+        const y2 = safeNum(guide.getAttribute('y2'), y1);
+        const guideTop = Math.min(y1, y2);
+        const guideBottom = Math.max(y1, y2);
+        const textCenter = (textTop + textBottom) / 2;
+        const guideCenter = (guideTop + guideBottom) / 2;
+
+        if (textCenter <= guideCenter) {
+          const nearAttr = y1 <= y2 ? 'y1' : 'y2';
+          const nearValue = nearAttr === 'y1' ? y1 : y2;
+          const nextNear = Math.max(nearValue, textBottom + gap);
+          if (this._moveGuideEndpoint(guide, nearAttr, nextNear)) applied = true;
+        } else {
+          const nearAttr = y1 >= y2 ? 'y1' : 'y2';
+          const nearValue = nearAttr === 'y1' ? y1 : y2;
+          const nextNear = Math.min(nearValue, textTop - gap);
+          if (this._moveGuideEndpoint(guide, nearAttr, nextNear)) applied = true;
+        }
+      });
       return applied;
     }
 
@@ -1971,8 +2026,8 @@
                   <line class="flow-node-guide" id="flow-battery-guide" x1="0" y1="12" x2="0" y2="42"></line>
                   <text class="flow-label" id="flow-battery-label" x="0" y="67">${this._t('card.node.battery', 'Batteria')}</text>
                   <text class="flow-power" id="flow-battery-power" x="-8" y="97" text-anchor="end">0.0 kW</text>
-                  <text class="flow-arrow" id="flow-battery-arrow" x="4" y="97" text-anchor="middle"></text>
-                  <text class="flow-pct" id="flow-battery-pct" x="17" y="97" text-anchor="start">--%</text>
+                  <text class="flow-arrow" id="flow-battery-arrow" x="0" y="97" text-anchor="middle"></text>
+                  <text class="flow-pct" id="flow-battery-pct" x="8" y="97" text-anchor="start">--%</text>
                   <text class="flow-status" id="flow-battery-status" x="0" y="118">${this._t('card.status.waiting', 'IN ATTESA')}</text>
                 </g>
 
@@ -2323,6 +2378,11 @@
         .replace(/'/g, '&#39;');
     }
 
+    _editorCommitEvent(el) {
+      if (el.type === 'checkbox' || el.tagName === 'SELECT') return 'change';
+      return el.dataset.commit || 'input';
+    }
+
     _entitySelectRow(label, path, options, placeholder) {
       const current = String(this._getByPath(path) || '');
       const values = Array.isArray(options) ? [...options] : [];
@@ -2622,7 +2682,7 @@
         if (el.dataset.jsonPath) return;
         const path = el.dataset.path;
         if (!path) return;
-        const eventName = el.dataset.commit || 'change';
+        const eventName = this._editorCommitEvent(el);
         el.addEventListener(eventName, () => {
           if (el.type === 'checkbox') {
             this._update(path, el.checked);
