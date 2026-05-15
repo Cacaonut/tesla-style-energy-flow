@@ -31,8 +31,20 @@ assert.match(
 
 assert.match(
   source,
-  /'grid-label': Object\.freeze\(\{ x: 8, y: 56 \}\)/,
-  'day clear idle grid label should sit high enough to stay inside the card'
+  /'solar-label': Object\.freeze\(\{ x: 0, y: -94 \}\),\s*'solar-power': Object\.freeze\(\{ x: 0, y: -72 \}\),\s*'solar-guide': Object\.freeze\(\{ x1: -20, y1: -56, x2: -20, y2: 16 \}\)/,
+  'day clear idle solar label, power and guide should sit closer to the PV modules'
+);
+
+assert.match(
+  source,
+  /'grid-label': Object\.freeze\(\{ x: 22, y: 68 \}\),\s*'grid-power': Object\.freeze\(\{ x: 22, y: 88 \}\),\s*'grid-guide': Object\.freeze\(\{ x1: 4, y1: 26, x2: 4, y2: 64 \}\)/,
+  'day clear idle grid label and power should move down while keeping the guide line in place'
+);
+
+assert.match(
+  source,
+  /'load-label': Object\.freeze\(\{ x: -14, y: -64 \}\),\s*'load-power': Object\.freeze\(\{ x: -14, y: -42 \}\),\s*'load-guide': Object\.freeze\(\{ x1: -32, y1: -6, x2: -32, y2: 68 \}\)/,
+  'day clear idle house label and power should move up while the guide line reaches farther upward'
 );
 
 assert.match(

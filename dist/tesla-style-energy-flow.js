@@ -535,15 +535,15 @@
   });
 
   const DAY_CLEAR_IDLE_COMPONENTS = Object.freeze({
-    'solar-label': Object.freeze({ x: -16, y: -108 }),
-    'solar-power': Object.freeze({ x: 0, y: -86 }),
-    'solar-guide': Object.freeze({ x1: -20, y1: -70, x2: -20, y2: 2 }),
-    'grid-label': Object.freeze({ x: 8, y: 56 }),
-    'grid-power': Object.freeze({ x: 22, y: 76 }),
+    'solar-label': Object.freeze({ x: 0, y: -94 }),
+    'solar-power': Object.freeze({ x: 0, y: -72 }),
+    'solar-guide': Object.freeze({ x1: -20, y1: -56, x2: -20, y2: 16 }),
+    'grid-label': Object.freeze({ x: 22, y: 68 }),
+    'grid-power': Object.freeze({ x: 22, y: 88 }),
     'grid-guide': Object.freeze({ x1: 4, y1: 26, x2: 4, y2: 64 }),
-    'load-label': Object.freeze({ x: -38, y: -50 }),
-    'load-power': Object.freeze({ x: -14, y: -28 }),
-    'load-guide': Object.freeze({ x1: -32, y1: 12, x2: -32, y2: 68 }),
+    'load-label': Object.freeze({ x: -14, y: -64 }),
+    'load-power': Object.freeze({ x: -14, y: -42 }),
+    'load-guide': Object.freeze({ x1: -32, y1: -6, x2: -32, y2: 68 }),
     'battery-label': Object.freeze({ x: -30, y: 82 }),
     'battery-power': Object.freeze({ x: -6, y: 104 }),
     'battery-arrow': Object.freeze({ x: 10, y: 104 }),
