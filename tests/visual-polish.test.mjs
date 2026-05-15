@@ -59,6 +59,18 @@ assert.match(
   'battery arrow and percent should stay locked to the battery power baseline'
 );
 
+assert.match(
+  source,
+  /_alignLabelPowerColumns\(\) \{/,
+  'labels should be realigned after scene profiles so headings stay centered over their power values'
+);
+
+assert.match(
+  source,
+  /alignPair\('#flow-solar-label', '#flow-solar-power'\);[\s\S]*alignPair\('#flow-grid-label', '#flow-grid-power'\);[\s\S]*alignPair\('#flow-load-label', '#flow-load-power'\);[\s\S]*alignPair\('#flow-ev-label', '#flow-ev-power'\);[\s\S]*alignPair\('#flow-ev2-label', '#flow-ev2-power'\);/,
+  'middle-anchored headings should share the same x coordinate as their power values'
+);
+
 assert.doesNotMatch(
   source,
   /\.flow-node\.inactive \.flow-node-guide\s*\{\s*opacity: 0;\s*\}/,

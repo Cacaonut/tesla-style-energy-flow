@@ -1563,6 +1563,7 @@
         });
       });
       if (this._alignBatteryValueRow()) applied = true;
+      if (this._alignLabelPowerColumns()) applied = true;
       if (applied && marker) this._lastAppliedSceneFlowComponentProfile = marker;
       return applied;
     }
@@ -1589,6 +1590,25 @@
       };
       setAligned('#flow-battery-arrow', powerX + 12, powerY);
       setAligned('#flow-battery-pct', powerX + 25, powerY);
+      return applied;
+    }
+
+    _alignLabelPowerColumns() {
+      let applied = false;
+      const alignPair = (labelSelector, powerSelector) => {
+        const label = this.shadowRoot.querySelector(labelSelector);
+        const power = this.shadowRoot.querySelector(powerSelector);
+        if (!label || !power) return;
+        const powerX = power.getAttribute('x');
+        if (powerX === null || label.getAttribute('x') === powerX) return;
+        label.setAttribute('x', powerX);
+        applied = true;
+      };
+      alignPair('#flow-solar-label', '#flow-solar-power');
+      alignPair('#flow-grid-label', '#flow-grid-power');
+      alignPair('#flow-load-label', '#flow-load-power');
+      alignPair('#flow-ev-label', '#flow-ev-power');
+      alignPair('#flow-ev2-label', '#flow-ev2-power');
       return applied;
     }
 
