@@ -61,20 +61,44 @@ assert.match(
 
 assert.match(
   source,
-  /const BATTERY_VALUE_ROW = Object\.freeze\(\{\s*arrowOffsetX: 8,\s*percentOffsetX: 16\s*\}\);/,
-  'battery value row spacing should keep power, arrow and percent visually grouped'
+  /const COMPACT_VALUE_ROW = Object\.freeze\(\{\s*arrowOffsetX: 8,\s*percentOffsetX: 16\s*\}\);/,
+  'compact value row spacing should keep power, arrow and percent visually grouped'
 );
 
 assert.match(
   source,
-  /_alignBatteryValueRow\(\) \{/,
-  'battery value row should be realigned after scene profiles so old pct coordinates cannot break the layout'
+  /_alignCompactValueRow\(powerSelector, arrowSelector, percentSelector\) \{/,
+  'battery and EV value rows should share one alignment helper'
 );
 
 assert.match(
   source,
-  /_setSvgAttrs\('#flow-battery-arrow', \{ x: powerX \+ BATTERY_VALUE_ROW\.arrowOffsetX, y: powerY \}\);[\s\S]*_setSvgAttrs\('#flow-battery-pct', \{ x: powerX \+ BATTERY_VALUE_ROW\.percentOffsetX, y: powerY \}\);/,
-  'battery arrow and percent should stay locked to the battery power baseline'
+  /_alignCompactValueRows\(\) \{[\s\S]*'#flow-battery-power', '#flow-battery-arrow', '#flow-battery-pct'[\s\S]*'#flow-ev-power', '#flow-ev-arrow', '#flow-ev-pct'[\s\S]*'#flow-ev2-power', '#flow-ev2-arrow', '#flow-ev2-pct'/,
+  'battery, EV 1 and EV 2 arrow and percent should stay locked to their power baselines'
+);
+
+assert.match(
+  source,
+  /<text class="flow-power" id="flow-ev-power" x="0" y="79" text-anchor="end">0\.0 kW<\/text>[\s\S]*<text class="flow-arrow" id="flow-ev-arrow" x="8" y="79" text-anchor="middle"><\/text>[\s\S]*<text class="flow-pct" id="flow-ev-pct" x="16" y="79" text-anchor="start">--%<\/text>/,
+  'EV 1 static markup should match the compact battery value row'
+);
+
+assert.match(
+  source,
+  /<text class="flow-power" id="flow-ev2-power" x="0" y="-8" text-anchor="end">0\.0 kW<\/text>[\s\S]*<text class="flow-arrow" id="flow-ev2-arrow" x="8" y="-8" text-anchor="middle"><\/text>[\s\S]*<text class="flow-pct" id="flow-ev2-pct" x="16" y="-8" text-anchor="start">--%<\/text>/,
+  'EV 2 static markup should be prepared with the compact battery value row'
+);
+
+assert.match(
+  source,
+  /'ev-arrow': Object\.freeze\(\{ id: 'flow-ev-arrow', attrs: Object\.freeze\(\['x', 'y'\]\) \}\),[\s\S]*'ev2-arrow': Object\.freeze\(\{ id: 'flow-ev2-arrow', attrs: Object\.freeze\(\['x', 'y'\]\) \}\),/,
+  'scene component bindings should allow EV arrows to be positioned with their rows'
+);
+
+assert.match(
+  source,
+  /const ev1Arrow = \(\(ev1\.power \|\| 0\) > 0 \|\| ev1\.switchOn\) \? '▲' : '';[\s\S]*this\._setText\('#flow-ev-arrow', ev1Arrow\);[\s\S]*const ev2Arrow = \(\(ev2\.power \|\| 0\) > 0 \|\| ev2\.switchOn\) \? '▲' : '';[\s\S]*this\._setText\('#flow-ev2-arrow', ev2Arrow\);/,
+  'EV arrows should turn on with the same green charging indicator semantics as the battery row'
 );
 
 assert.match(
@@ -163,8 +187,146 @@ assert.match(
 
 assert.match(
   source,
-  /const POSITION_EDITOR_GROUPS = Object\.freeze\(\[[\s\S]*title: 'Solar'[\s\S]*title: 'Netz'[\s\S]*title: 'Haus'[\s\S]*title: 'Batterie'[\s\S]*\]\);/,
-  'visual editor should provide per-component controls for label, value and guide positions'
+  /const POSITION_EDITOR_GROUPS = Object\.freeze\(\[[\s\S]*title: 'Solar'[\s\S]*title: 'Netz'[\s\S]*title: 'Haus'[\s\S]*title: 'Batterie'[\s\S]*title: 'EV 1'[\s\S]*scene: 'charging'[\s\S]*title: 'EV 2'[\s\S]*scene: 'dual_charging'[\s\S]*\]\);/,
+  'visual editor should provide per-component controls for fixed nodes and charging EV nodes'
+);
+
+assert.match(
+  source,
+  /const POSITION_EDITOR_NODE_ORIGINS = Object\.freeze\(\{[\s\S]*solar: Object\.freeze\(\{ x: 286, y: 155 \}\)[\s\S]*grid: Object\.freeze\(\{ x: 448, y: 336 \}\)[\s\S]*load: Object\.freeze\(\{ x: 465, y: 247 \}\)[\s\S]*battery: Object\.freeze\(\{ x: 314, y: 330 \}\)[\s\S]*ev: Object\.freeze\(\{ x: 184, y: 332 \}\)[\s\S]*ev2: Object\.freeze\(\{ x: 106, y: 316 \}\)[\s\S]*\}\);/,
+  'visual position preview should know the SVG node origins for fixed and EV scene coordinate updates'
+);
+
+assert.match(
+  source,
+  /_positionEditorGroups\(sceneKey\) \{[\s\S]*group\.scene === 'charging'[\s\S]*sceneKey\.includes\('charging'\)[\s\S]*group\.scene === 'dual_charging'[\s\S]*sceneKey\.includes\('dual_charging'\)/,
+  'visual editor should show EV markers only for charging scenes where those markers are relevant'
+);
+
+assert.match(
+  source,
+  /_positionPreviewSvg\(sceneKey\) \{[\s\S]*<svg class="position-preview-svg"[\s\S]*data-position-preview-svg[\s\S]*viewBox="0 0 600 460"/,
+  'visual editor should render an SVG preview for visual position tuning'
+);
+
+assert.match(
+  source,
+  /_positionEditorModal\(\) \{[\s\S]*data-position-editor-modal[\s\S]*data-close-position-editor[^>]*>Schliessen<\/button>[\s\S]*this\._positionEditorControls\(\{ modal: true \}\)/,
+  'visual position editor should render the large editing surface inside a modal'
+);
+
+assert.match(
+  source,
+  /<button type="button" class="position-open-button" data-open-position-editor>/,
+  'scene positions section should open the visual editor in a popup instead of embedding the full workspace'
+);
+
+assert.match(
+  source,
+  /_positionAxisInput\(sceneKey, componentKey, attr, axis\) \{[\s\S]*class="position-axis-field"[\s\S]*data-position-path=/,
+  'position inputs should render as compact axis fields below the preview'
+);
+
+assert.match(
+  source,
+  /_positionPairRow\(sceneKey, title, xComponentKey, xAttr, yComponentKey, yAttr\) \{[\s\S]*class="position-pair-row"[\s\S]*this\._positionAxisInput\(sceneKey, xComponentKey, xAttr, 'X'\)[\s\S]*this\._positionAxisInput\(sceneKey, yComponentKey, yAttr, 'Y'\)/,
+  'position inputs should render as compact x/y pairs below the preview'
+);
+
+assert.match(
+  source,
+  /\.position-editor-panel \{[\s\S]*width: 100%;[\s\S]*max-width: min\(1180px, calc\(100vw - 32px\)\);[\s\S]*overflow: hidden;[\s\S]*box-sizing: border-box;/,
+  'position editor popup should keep its panel bounded inside the available container and viewport'
+);
+
+assert.match(
+  source,
+  /_isEditorBusy\(\) \{[\s\S]*!!this\._positionEditorOpen/,
+  'Home Assistant refreshes should not rerender the open position editor and reset scroll or scene selection'
+);
+
+assert.match(
+  source,
+  /\.position-editor-workspace \{[\s\S]*display: flex;[\s\S]*flex-direction: column;[\s\S]*overflow: auto;/,
+  'position editor workspace should stack preview and controls in normal flow so they cannot overlap'
+);
+
+assert.match(
+  source,
+  /\.position-pair-grid \{[\s\S]*grid-template-columns: repeat\(auto-fit, minmax\(210px, 1fr\)\);/,
+  'position value pairs should use a compact responsive grid below the preview'
+);
+
+assert.match(
+  source,
+  /\.position-groups-modal \{[\s\S]*max-height: none;[\s\S]*overflow: visible;/,
+  'position groups inside the popup should scroll with the workspace instead of being clipped as a side rail'
+);
+
+assert.match(
+  source,
+  /positionSceneSelect\.addEventListener\('focus', \(\) => \{[\s\S]*this\._editingPath = 'position-scene';[\s\S]*positionSceneSelect\.addEventListener\('blur', \(\) => \{[\s\S]*this\._editingPath = '';/,
+  'scene selector should be protected from Home Assistant refreshes while the dropdown is being used'
+);
+
+assert.match(
+  source,
+  /this\._positionEditorOpen = true;[\s\S]*this\._render\(\);[\s\S]*this\._positionEditorOpen = false;[\s\S]*this\._render\(\);/,
+  'visual position editor popup should have open and close event handlers'
+);
+
+assert.match(
+  source,
+  /_positionPreviewGroup\(sceneKey, group\) \{[\s\S]*data-drag-kind="text"/,
+  'visual editor preview should include draggable text handles'
+);
+
+assert.match(
+  source,
+  /_positionPreviewGroup\(sceneKey, group\) \{[\s\S]*data-drag-kind="guide"/,
+  'visual editor preview should include draggable text and guide handles'
+);
+
+assert.match(
+  source,
+  /_positionPointerPoint\(event, svg\) \{[\s\S]*createSVGPoint[\s\S]*matrixTransform[\s\S]*getScreenCTM\(\)\.inverse\(\)/,
+  'visual editor drag handling should convert pointer positions into SVG coordinates'
+);
+
+assert.match(
+  source,
+  /_beginPositionDrag\(event\) \{[\s\S]*setPointerCapture\?\.\(event\.pointerId\)[\s\S]*this\._positionDrag =/,
+  'visual editor should capture pointer drags from preview handles'
+);
+
+assert.match(
+  source,
+  /_positionTextDragValues\(sceneKey, group\) \{[\s\S]*group\.label, attr: 'x'[\s\S]*group\.power, attr: 'x'[\s\S]*group\.guide, attr: 'x1'[\s\S]*group\.guide, attr: 'x2'/,
+  'dragging a label block should move the label, kW value and guide x coordinate together'
+);
+
+assert.match(
+  source,
+  /_positionGuideDragValues\(sceneKey, componentKey, endpoint\) \{[\s\S]*attr: `y\$\{endpoint\}`/,
+  'dragging a guide endpoint should only change its y coordinate so guide lines stay vertical'
+);
+
+assert.match(
+  source,
+  /_movePositionDrag\(event\) \{[\s\S]*const changes = this\._positionDrag\.values\.map[\s\S]*this\._queueScenePositionChanges\(sceneKey, changes\)[\s\S]*this\._updatePositionPreviewDom\(sceneKey, changes\)/,
+  'visual editor should update scene_component_map and the preview DOM while dragging'
+);
+
+assert.match(
+  source,
+  /_positionLinkedChanges\(sceneKey, componentKey, attr, value\) \{[\s\S]*if \(\['x', 'x1', 'x2'\]\.includes\(attr\) && group\)[\s\S]*componentKey: group\.label, attr: 'x'[\s\S]*componentKey: group\.power, attr: 'x'[\s\S]*componentKey: group\.guide, attr: 'x1'[\s\S]*componentKey: group\.guide, attr: 'x2'/,
+  'manual x edits should keep labels, kW values and guide lines centered in the GUI editor'
+);
+
+assert.match(
+  source,
+  /_queueScenePositionChanges\(sceneKey, changes\) \{[\s\S]*this\._applyScenePositionChanges\(sceneKey, changes, false\)[\s\S]*EDITOR_UPDATE_DEBOUNCE_MS/,
+  'visual editor should debounce drag updates before emitting Home Assistant config changes'
 );
 
 assert.match(

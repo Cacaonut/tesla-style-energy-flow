@@ -15,7 +15,7 @@
     { value: 'fr', labelKey: 'editor.lang_fr' },
     { value: 'de', labelKey: 'editor.lang_de' }
   ]);
-  const BATTERY_VALUE_ROW = Object.freeze({
+  const COMPACT_VALUE_ROW = Object.freeze({
     arrowOffsetX: 8,
     percentOffsetX: 16
   });
@@ -868,11 +868,22 @@
   );
 
   const POSITION_EDITOR_GROUPS = Object.freeze([
-    Object.freeze({ title: 'Solar', label: 'solar-label', power: 'solar-power', guide: 'solar-guide' }),
-    Object.freeze({ title: 'Netz', label: 'grid-label', power: 'grid-power', guide: 'grid-guide' }),
-    Object.freeze({ title: 'Haus', label: 'load-label', power: 'load-power', guide: 'load-guide' }),
-    Object.freeze({ title: 'Batterie', label: 'battery-label', power: 'battery-power', guide: 'battery-guide' })
+    Object.freeze({ title: 'Solar', node: 'solar', label: 'solar-label', power: 'solar-power', guide: 'solar-guide' }),
+    Object.freeze({ title: 'Netz', node: 'grid', label: 'grid-label', power: 'grid-power', guide: 'grid-guide' }),
+    Object.freeze({ title: 'Haus', node: 'load', label: 'load-label', power: 'load-power', guide: 'load-guide' }),
+    Object.freeze({ title: 'Batterie', node: 'battery', label: 'battery-label', power: 'battery-power', guide: 'battery-guide' }),
+    Object.freeze({ title: 'EV 1', node: 'ev', label: 'ev-label', power: 'ev-power', guide: 'ev-guide', scene: 'charging' }),
+    Object.freeze({ title: 'EV 2', node: 'ev2', label: 'ev2-label', power: 'ev2-power', guide: 'ev2-guide', scene: 'dual_charging' })
   ]);
+
+  const POSITION_EDITOR_NODE_ORIGINS = Object.freeze({
+    solar: Object.freeze({ x: 286, y: 155 }),
+    grid: Object.freeze({ x: 448, y: 336 }),
+    load: Object.freeze({ x: 465, y: 247 }),
+    battery: Object.freeze({ x: 314, y: 330 }),
+    ev: Object.freeze({ x: 184, y: 332 }),
+    ev2: Object.freeze({ x: 106, y: 316 })
+  });
 
   const FLOW_COMPONENT_BINDINGS = Object.freeze({
     'solar-label': Object.freeze({ id: 'flow-solar-label', attrs: Object.freeze(['x', 'y']) }),
@@ -892,10 +903,12 @@
     'battery-guide': Object.freeze({ id: 'flow-battery-guide', attrs: Object.freeze(['x1', 'y1', 'x2', 'y2']) }),
     'ev-label': Object.freeze({ id: 'flow-ev-label', attrs: Object.freeze(['x', 'y']) }),
     'ev-power': Object.freeze({ id: 'flow-ev-power', attrs: Object.freeze(['x', 'y']) }),
+    'ev-arrow': Object.freeze({ id: 'flow-ev-arrow', attrs: Object.freeze(['x', 'y']) }),
     'ev-pct': Object.freeze({ id: 'flow-ev-pct', attrs: Object.freeze(['x', 'y']) }),
     'ev-guide': Object.freeze({ id: 'flow-ev-guide', attrs: Object.freeze(['x1', 'y1', 'x2', 'y2']) }),
     'ev2-label': Object.freeze({ id: 'flow-ev2-label', attrs: Object.freeze(['x', 'y']) }),
     'ev2-power': Object.freeze({ id: 'flow-ev2-power', attrs: Object.freeze(['x', 'y']) }),
+    'ev2-arrow': Object.freeze({ id: 'flow-ev2-arrow', attrs: Object.freeze(['x', 'y']) }),
     'ev2-pct': Object.freeze({ id: 'flow-ev2-pct', attrs: Object.freeze(['x', 'y']) }),
     'ev2-guide': Object.freeze({ id: 'flow-ev2-guide', attrs: Object.freeze(['x1', 'y1', 'x2', 'y2']) }),
     'roof-a-label': Object.freeze({ id: 'flow-roof-a-label', attrs: Object.freeze(['x', 'y']) }),
@@ -1600,10 +1613,10 @@
         });
         if (this._setSvgAttrs(target, attrs)) applied = true;
       });
-      if (this._alignBatteryValueRow()) applied = true;
+      if (this._alignCompactValueRows()) applied = true;
       if (this._alignLabelPowerColumns()) applied = true;
       if (this._fitTextBlocksToViewBox()) applied = true;
-      if (this._alignBatteryValueRow()) applied = true;
+      if (this._alignCompactValueRows()) applied = true;
       if (this._alignGuideTextClearance()) applied = true;
       if (applied && marker) this._lastAppliedSceneFlowComponentProfile = marker;
       return applied;
@@ -1625,14 +1638,26 @@
       return applied;
     }
 
-    _alignBatteryValueRow() {
-      const power = this.shadowRoot.querySelector('#flow-battery-power');
+    _alignCompactValueRow(powerSelector, arrowSelector, percentSelector) {
+      const power = this.shadowRoot.querySelector(powerSelector);
       if (!power) return false;
       const powerX = safeNum(power.getAttribute('x'), -8);
       const powerY = safeNum(power.getAttribute('y'), 97);
-      const arrowApplied = this._setSvgAttrs('#flow-battery-arrow', { x: powerX + BATTERY_VALUE_ROW.arrowOffsetX, y: powerY });
-      const percentApplied = this._setSvgAttrs('#flow-battery-pct', { x: powerX + BATTERY_VALUE_ROW.percentOffsetX, y: powerY });
+      const arrowApplied = this._setSvgAttrs(arrowSelector, { x: powerX + COMPACT_VALUE_ROW.arrowOffsetX, y: powerY });
+      const percentApplied = this._setSvgAttrs(percentSelector, { x: powerX + COMPACT_VALUE_ROW.percentOffsetX, y: powerY });
       return arrowApplied || percentApplied;
+    }
+
+    _alignCompactValueRows() {
+      let applied = false;
+      [
+        ['#flow-battery-power', '#flow-battery-arrow', '#flow-battery-pct'],
+        ['#flow-ev-power', '#flow-ev-arrow', '#flow-ev-pct'],
+        ['#flow-ev2-power', '#flow-ev2-arrow', '#flow-ev2-pct']
+      ].forEach(([powerSelector, arrowSelector, percentSelector]) => {
+        if (this._alignCompactValueRow(powerSelector, arrowSelector, percentSelector)) applied = true;
+      });
+      return applied;
     }
 
     _alignLabelPowerColumns() {
@@ -1949,13 +1974,19 @@
             font-size: calc(9px * var(--flow-font-scale));
             font-weight: 800;
           }
-          #flow-battery-power {
+          #flow-battery-power,
+          #flow-ev-power,
+          #flow-ev2-power {
             text-anchor: end;
           }
-          #flow-battery-arrow {
+          #flow-battery-arrow,
+          #flow-ev-arrow,
+          #flow-ev2-arrow {
             text-anchor: middle;
           }
-          #flow-battery-pct {
+          #flow-battery-pct,
+          #flow-ev-pct,
+          #flow-ev2-pct {
             text-anchor: start;
           }
           .flow-status {
@@ -2172,8 +2203,9 @@
                   <circle class="flow-node-bg" id="node-ev-bg" cx="0" cy="0" r="5"></circle>
                   <line class="flow-node-guide" id="flow-ev-guide" x1="0" y1="12" x2="0" y2="42"></line>
                   <text class="flow-label" id="flow-ev-label" x="0" y="61">${this._t('card.node.ev', 'EV')}</text>
-                  <text class="flow-power" id="flow-ev-power" x="0" y="79">0.0 kW</text>
-                  <text class="flow-pct" id="flow-ev-pct" x="0" y="95">--%</text>
+                  <text class="flow-power" id="flow-ev-power" x="0" y="79" text-anchor="end">0.0 kW</text>
+                  <text class="flow-arrow" id="flow-ev-arrow" x="8" y="79" text-anchor="middle"></text>
+                  <text class="flow-pct" id="flow-ev-pct" x="16" y="79" text-anchor="start">--%</text>
                   <text class="flow-status" id="flow-ev-status" x="0" y="110">${this._t('card.status.off', 'OFF')}</text>
                 </g>
 
@@ -2181,8 +2213,9 @@
                   <circle class="flow-node-bg" id="node-ev2-bg" cx="0" cy="0" r="5"></circle>
                   <line class="flow-node-guide" id="flow-ev2-guide" x1="0" y1="-18" x2="0" y2="12"></line>
                   <text class="flow-label" id="flow-ev2-label" x="0" y="-26">EV 2</text>
-                  <text class="flow-power" id="flow-ev2-power" x="0" y="-8">0.0 kW</text>
-                  <text class="flow-pct" id="flow-ev2-pct" x="0" y="8">--%</text>
+                  <text class="flow-power" id="flow-ev2-power" x="0" y="-8" text-anchor="end">0.0 kW</text>
+                  <text class="flow-arrow" id="flow-ev2-arrow" x="8" y="-8" text-anchor="middle"></text>
+                  <text class="flow-pct" id="flow-ev2-pct" x="16" y="-8" text-anchor="start">--%</text>
                   <text class="flow-status" id="flow-ev2-status" x="0" y="24">${this._t('card.status.off', 'OFF')}</text>
                 </g>
               </svg>
@@ -2277,9 +2310,13 @@
       this._setText('#flow-battery-pct', batteryConfigured ? `${Math.round(batteryLevel)}%` : '');
       this._setText('#flow-ev-label', ev1.labelText || this._t('card.node.ev', 'EV'));
       this._setText('#flow-ev-power', this._formatKW(ev1.power || 0));
+      const ev1Arrow = ((ev1.power || 0) > 0 || ev1.switchOn) ? '▲' : '';
+      this._setText('#flow-ev-arrow', ev1Arrow);
       this._setText('#flow-ev-pct', ev1.batteryText || '--%');
       this._setText('#flow-ev2-label', ev2.labelText || 'EV 2');
       this._setText('#flow-ev2-power', this._formatKW(ev2.power || 0));
+      const ev2Arrow = ((ev2.power || 0) > 0 || ev2.switchOn) ? '▲' : '';
+      this._setText('#flow-ev2-arrow', ev2Arrow);
       this._setText('#flow-ev2-pct', ev2.batteryText || '--%');
 
       const batteryStatusEl = this.shadowRoot.querySelector('#flow-battery-status');
@@ -2409,6 +2446,8 @@
       this._configSignature = JSON.stringify(this._config);
       this._pendingEditorUpdate = null;
       this._editingPath = '';
+      this._positionDrag = null;
+      this._positionEditorOpen = false;
       this._positionSceneKey = POSITION_EDITOR_SCENES[0]?.key || 'scene_day_clear_idle.png';
     }
 
@@ -2437,7 +2476,7 @@
     }
 
     _isEditorBusy() {
-      return !!this._editingPath || !!this._pendingEditorUpdate;
+      return !!this._editingPath || !!this._pendingEditorUpdate || !!this._positionDrag || !!this._positionEditorOpen;
     }
 
     _emitConfig() {
@@ -2627,24 +2666,138 @@
         .join('');
     }
 
+    _positionEditorGroups(sceneKey) {
+      return POSITION_EDITOR_GROUPS.filter((group) => {
+        if (!group.scene) return true;
+        if (group.scene === 'charging') return sceneKey.includes('charging');
+        if (group.scene === 'dual_charging') return sceneKey.includes('dual_charging');
+        return true;
+      });
+    }
+
     _positionValue(sceneKey, componentKey, attr) {
       const scene = this._sceneFlowComponentMap()[sceneKey] || {};
       return safeNum(scene[componentKey]?.[attr], 0);
     }
 
-    _positionNumberInput(sceneKey, componentKey, attr, label) {
+    _positionNodeOrigin(group) {
+      return POSITION_EDITOR_NODE_ORIGINS[group.node] || Object.freeze({ x: 0, y: 0 });
+    }
+
+    _positionScenePoint(sceneKey, group, componentKey, xAttr = 'x', yAttr = 'y') {
+      const origin = this._positionNodeOrigin(group);
+      return {
+        x: origin.x + this._positionValue(sceneKey, componentKey, xAttr),
+        y: origin.y + this._positionValue(sceneKey, componentKey, yAttr)
+      };
+    }
+
+    _positionPreviewBackground(sceneKey) {
+      const base = this._config.background_asset_base || '/local/community/tesla-style-energy-flow/backgrounds';
+      return joinAsset(base, sceneKey);
+    }
+
+    _positionPreviewTextCenter(sceneKey, group) {
+      const x = this._positionScenePoint(sceneKey, group, group.guide, 'x1', 'y1').x;
+      const label = this._positionScenePoint(sceneKey, group, group.label);
+      const power = this._positionScenePoint(sceneKey, group, group.power);
+      return {
+        x,
+        y: (label.y + power.y) / 2
+      };
+    }
+
+    _positionPreviewGroup(sceneKey, group) {
+      const guideStart = this._positionScenePoint(sceneKey, group, group.guide, 'x1', 'y1');
+      const guideEndRaw = this._positionScenePoint(sceneKey, group, group.guide, 'x2', 'y2');
+      const guideEnd = { x: guideStart.x, y: guideEndRaw.y };
+      const label = {
+        ...this._positionScenePoint(sceneKey, group, group.label),
+        x: guideStart.x
+      };
+      const power = {
+        ...this._positionScenePoint(sceneKey, group, group.power),
+        x: guideStart.x
+      };
+      const textCenter = this._positionPreviewTextCenter(sceneKey, group);
+      const title = this._escapeHtml(group.title.toUpperCase());
+      const scene = this._escapeHtml(sceneKey);
+      return `
+        <g class="position-preview-group" data-position-preview-group="${this._escapeHtml(group.node)}">
+          <line class="position-preview-guide" data-preview-component="${this._escapeHtml(group.guide)}" x1="${guideStart.x}" y1="${guideStart.y}" x2="${guideEnd.x}" y2="${guideEnd.y}"></line>
+          <g
+            class="position-preview-text"
+            data-drag-kind="text"
+            data-position-scene-key="${scene}"
+            data-position-node="${this._escapeHtml(group.node)}"
+            data-position-label-component="${this._escapeHtml(group.label)}"
+            data-position-power-component="${this._escapeHtml(group.power)}">
+            <text class="position-preview-label" data-preview-component="${this._escapeHtml(group.label)}" x="${label.x}" y="${label.y}">${title}</text>
+            <text class="position-preview-power" data-preview-component="${this._escapeHtml(group.power)}" x="${power.x}" y="${power.y}">0.0 kW</text>
+            <circle class="position-text-grip" data-preview-text-grip="${this._escapeHtml(group.label)}" cx="${textCenter.x}" cy="${textCenter.y}" r="8"></circle>
+          </g>
+          <circle
+            class="position-guide-handle"
+            data-drag-kind="guide"
+            data-position-scene-key="${scene}"
+            data-position-node="${this._escapeHtml(group.node)}"
+            data-position-component="${this._escapeHtml(group.guide)}"
+            data-position-endpoint="1"
+            cx="${guideStart.x}"
+            cy="${guideStart.y}"
+            r="7"></circle>
+          <circle
+            class="position-guide-handle"
+            data-drag-kind="guide"
+            data-position-scene-key="${scene}"
+            data-position-node="${this._escapeHtml(group.node)}"
+            data-position-component="${this._escapeHtml(group.guide)}"
+            data-position-endpoint="2"
+            cx="${guideEnd.x}"
+            cy="${guideEnd.y}"
+            r="7"></circle>
+        </g>
+      `;
+    }
+
+    _positionPreviewSvg(sceneKey) {
+      const background = this._escapeHtml(this._positionPreviewBackground(sceneKey));
+      return `
+        <div class="position-preview-frame">
+          <svg class="position-preview-svg" data-position-preview-svg data-position-scene-key="${this._escapeHtml(sceneKey)}" viewBox="0 0 600 460" preserveAspectRatio="xMidYMid meet">
+            <image class="position-preview-image" href="${background}" x="0" y="0" width="600" height="460" preserveAspectRatio="xMidYMid slice"></image>
+            <rect class="position-preview-dim" x="0" y="0" width="600" height="460"></rect>
+            ${this._positionEditorGroups(sceneKey).map((group) => this._positionPreviewGroup(sceneKey, group)).join('')}
+          </svg>
+        </div>
+      `;
+    }
+
+    _positionAxisInput(sceneKey, componentKey, attr, axis) {
       const value = this._positionValue(sceneKey, componentKey, attr);
       const path = `${sceneKey}:${componentKey}.${attr}`;
       return `
-        <label>${label}</label>
-        <input
-          type="number"
-          step="1"
-          data-position-path="${this._escapeHtml(path)}"
-          data-position-scene-key="${this._escapeHtml(sceneKey)}"
-          data-position-component="${this._escapeHtml(componentKey)}"
-          data-position-attr="${this._escapeHtml(attr)}"
-          value="${value}">
+        <label class="position-axis-field">
+          <span>${this._escapeHtml(axis)}</span>
+          <input
+            type="number"
+            step="1"
+            data-position-path="${this._escapeHtml(path)}"
+            data-position-scene-key="${this._escapeHtml(sceneKey)}"
+            data-position-component="${this._escapeHtml(componentKey)}"
+            data-position-attr="${this._escapeHtml(attr)}"
+            value="${value}">
+        </label>
+      `;
+    }
+
+    _positionPairRow(sceneKey, title, xComponentKey, xAttr, yComponentKey, yAttr) {
+      return `
+        <div class="position-pair-row">
+          <div class="position-pair-title">${this._escapeHtml(title)}</div>
+          ${this._positionAxisInput(sceneKey, xComponentKey, xAttr, 'X')}
+          ${this._positionAxisInput(sceneKey, yComponentKey, yAttr, 'Y')}
+        </div>
       `;
     }
 
@@ -2652,31 +2805,103 @@
       return `
         <div class="position-group">
           <div class="position-title">${this._escapeHtml(group.title)}</div>
-          <div class="position-fields">
-            ${this._positionNumberInput(sceneKey, group.label, 'x', 'Label X')}
-            ${this._positionNumberInput(sceneKey, group.label, 'y', 'Label Y')}
-            ${this._positionNumberInput(sceneKey, group.power, 'x', 'Wert X')}
-            ${this._positionNumberInput(sceneKey, group.power, 'y', 'Wert Y')}
-            ${this._positionNumberInput(sceneKey, group.guide, 'x1', 'Strich X1')}
-            ${this._positionNumberInput(sceneKey, group.guide, 'y1', 'Strich Y1')}
-            ${this._positionNumberInput(sceneKey, group.guide, 'x2', 'Strich X2')}
-            ${this._positionNumberInput(sceneKey, group.guide, 'y2', 'Strich Y2')}
+          <div class="position-pair-grid">
+            ${this._positionPairRow(sceneKey, 'Label', group.label, 'x', group.label, 'y')}
+            ${this._positionPairRow(sceneKey, 'Wert', group.power, 'x', group.power, 'y')}
+            ${this._positionPairRow(sceneKey, 'Strich A', group.guide, 'x1', group.guide, 'y1')}
+            ${this._positionPairRow(sceneKey, 'Strich B', group.guide, 'x2', group.guide, 'y2')}
           </div>
         </div>
       `;
     }
 
-    _positionEditorControls() {
+    _positionEditorControls(options = {}) {
       const selectedScene = this._selectedPositionScene();
+      const modalClass = options.modal ? ' position-groups-modal' : '';
       return `
         <label>Szene</label>
         <select data-position-scene>
           ${this._positionSceneOptions(selectedScene)}
         </select>
-        <div class="position-groups">
-          ${POSITION_EDITOR_GROUPS.map((group) => this._positionGroupRows(selectedScene, group)).join('')}
+        ${this._positionPreviewSvg(selectedScene)}
+        <div class="position-groups${modalClass}">
+          ${this._positionEditorGroups(selectedScene).map((group) => this._positionGroupRows(selectedScene, group)).join('')}
         </div>
       `;
+    }
+
+    _positionEditorModal() {
+      if (!this._positionEditorOpen) return '';
+      return `
+        <div class="position-editor-modal" data-position-editor-modal>
+          <div class="position-editor-panel">
+            <div class="position-editor-header">
+              <div>
+                <div class="position-editor-kicker">Scene Positions</div>
+                <div class="position-editor-title-row">
+                  <h3>Visuell bearbeiten</h3>
+                  <button type="button" class="position-close-button" data-close-position-editor aria-label="Close">Schliessen</button>
+                </div>
+              </div>
+            </div>
+            <div class="position-editor-workspace">
+              ${this._positionEditorControls({ modal: true })}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    _positionGroupForComponent(componentKey) {
+      return POSITION_EDITOR_GROUPS.find((group) => (
+        group.label === componentKey ||
+        group.power === componentKey ||
+        group.guide === componentKey
+      ));
+    }
+
+    _positionTextDragValues(sceneKey, group) {
+      const x = this._positionValue(sceneKey, group.guide, 'x1');
+      return [
+        { componentKey: group.label, attr: 'x', value: x },
+        { componentKey: group.label, attr: 'y', value: this._positionValue(sceneKey, group.label, 'y') },
+        { componentKey: group.power, attr: 'x', value: x },
+        { componentKey: group.power, attr: 'y', value: this._positionValue(sceneKey, group.power, 'y') },
+        { componentKey: group.guide, attr: 'x1', value: x },
+        { componentKey: group.guide, attr: 'x2', value: x }
+      ];
+    }
+
+    _positionGuideDragValues(sceneKey, componentKey, endpoint) {
+      return [
+        { componentKey, attr: `y${endpoint}`, value: this._positionValue(sceneKey, componentKey, `y${endpoint}`) }
+      ];
+    }
+
+    _positionLinkedChanges(sceneKey, componentKey, attr, value) {
+      const group = this._positionGroupForComponent(componentKey);
+      if (['x', 'x1', 'x2'].includes(attr) && group) {
+        return [
+          { componentKey: group.label, attr: 'x', value },
+          { componentKey: group.power, attr: 'x', value },
+          { componentKey: group.guide, attr: 'x1', value },
+          { componentKey: group.guide, attr: 'x2', value }
+        ];
+      }
+      return [{ componentKey, attr, value }];
+    }
+
+    _applyScenePositionChanges(sceneKey, changes, emit = true) {
+      const nextMap = { ...(this._config.scene_component_map || {}) };
+      const scene = { ...(nextMap[sceneKey] || {}) };
+      changes.forEach(({ componentKey, attr, value }) => {
+        const component = { ...(scene[componentKey] || {}) };
+        component[attr] = Number(safeNum(value, 0).toFixed(2));
+        scene[componentKey] = component;
+      });
+      nextMap[sceneKey] = scene;
+      this._applyEditorValue('scene_component_map', nextMap);
+      if (emit) this._emitConfig();
     }
 
     _updateSceneComponentPosition(sceneKey, componentKey, attr, value, emit = true) {
@@ -2690,13 +2915,143 @@
       if (emit) this._emitConfig();
     }
 
-    _queueSceneComponentPosition(sceneKey, componentKey, attr, value) {
-      this._updateSceneComponentPosition(sceneKey, componentKey, attr, value, false);
+    _queueScenePositionChanges(sceneKey, changes) {
+      this._applyScenePositionChanges(sceneKey, changes, false);
       if (this._pendingEditorUpdate) clearTimeout(this._pendingEditorUpdate);
       this._pendingEditorUpdate = setTimeout(() => {
         this._pendingEditorUpdate = null;
         this._emitConfig();
       }, EDITOR_UPDATE_DEBOUNCE_MS);
+    }
+
+    _setPreviewAttrs(svg, selector, attrs) {
+      const el = svg?.querySelector(selector);
+      if (!el) return;
+      Object.entries(attrs).forEach(([attr, value]) => {
+        el.setAttribute(attr, Number(safeNum(value, 0).toFixed(2)));
+      });
+    }
+
+    _updatePositionPreviewGroupDom(svg, sceneKey, group) {
+      const guideStart = this._positionScenePoint(sceneKey, group, group.guide, 'x1', 'y1');
+      const guideEndRaw = this._positionScenePoint(sceneKey, group, group.guide, 'x2', 'y2');
+      const guideEnd = { x: guideStart.x, y: guideEndRaw.y };
+      const label = {
+        ...this._positionScenePoint(sceneKey, group, group.label),
+        x: guideStart.x
+      };
+      const power = {
+        ...this._positionScenePoint(sceneKey, group, group.power),
+        x: guideStart.x
+      };
+      const textCenter = this._positionPreviewTextCenter(sceneKey, group);
+      this._setPreviewAttrs(svg, `[data-preview-component="${group.label}"]`, label);
+      this._setPreviewAttrs(svg, `[data-preview-component="${group.power}"]`, power);
+      this._setPreviewAttrs(svg, `[data-preview-component="${group.guide}"]`, {
+        x1: guideStart.x,
+        y1: guideStart.y,
+        x2: guideEnd.x,
+        y2: guideEnd.y
+      });
+      this._setPreviewAttrs(svg, `[data-preview-text-grip="${group.label}"]`, { cx: textCenter.x, cy: textCenter.y });
+      this._setPreviewAttrs(svg, `[data-position-component="${group.guide}"][data-position-endpoint="1"]`, { cx: guideStart.x, cy: guideStart.y });
+      this._setPreviewAttrs(svg, `[data-position-component="${group.guide}"][data-position-endpoint="2"]`, { cx: guideEnd.x, cy: guideEnd.y });
+    }
+
+    _updatePositionPreviewInputs(sceneKey, changes) {
+      changes.forEach(({ componentKey, attr, value }) => {
+        const input = this.shadowRoot.querySelector(
+          `input[data-position-scene-key="${sceneKey}"][data-position-component="${componentKey}"][data-position-attr="${attr}"]`
+        );
+        if (input && input !== this.shadowRoot.activeElement) input.value = Number(safeNum(value, 0).toFixed(2));
+      });
+    }
+
+    _updatePositionPreviewDom(sceneKey, changes) {
+      const svg = this.shadowRoot.querySelector('svg[data-position-preview-svg]');
+      if (!svg) return;
+      const groups = new Set();
+      changes.forEach(({ componentKey }) => {
+        const group = this._positionGroupForComponent(componentKey);
+        if (group) groups.add(group);
+      });
+      groups.forEach((group) => this._updatePositionPreviewGroupDom(svg, sceneKey, group));
+      this._updatePositionPreviewInputs(sceneKey, changes);
+    }
+
+    _positionPointerPoint(event, svg) {
+      if (svg.createSVGPoint && svg.getScreenCTM()) {
+        const point = svg.createSVGPoint();
+        point.x = event.clientX;
+        point.y = event.clientY;
+        return point.matrixTransform(svg.getScreenCTM().inverse());
+      }
+      const rect = svg.getBoundingClientRect();
+      return {
+        x: ((event.clientX - rect.left) / rect.width) * 600,
+        y: ((event.clientY - rect.top) / rect.height) * 460
+      };
+    }
+
+    _beginPositionDrag(event) {
+      const handle = event.target.closest?.('[data-drag-kind]');
+      if (!handle) return;
+      const svg = handle.closest?.('svg[data-position-preview-svg]');
+      if (!svg) return;
+      event.preventDefault();
+      handle.setPointerCapture?.(event.pointerId);
+      const sceneKey = handle.dataset.positionSceneKey || this._selectedPositionScene();
+      const start = this._positionPointerPoint(event, svg);
+      const kind = handle.dataset.dragKind;
+      const drag = {
+        kind,
+        handle,
+        sceneKey,
+        start,
+        values: []
+      };
+
+      if (kind === 'text') {
+        const group = this._positionGroupForComponent(handle.dataset.positionLabelComponent);
+        if (group) drag.values = this._positionTextDragValues(sceneKey, group);
+      } else if (kind === 'guide') {
+        const componentKey = handle.dataset.positionComponent;
+        const endpoint = handle.dataset.positionEndpoint === '2' ? '2' : '1';
+        drag.values = this._positionGuideDragValues(sceneKey, componentKey, endpoint);
+      }
+
+      if (!drag.values.length) return;
+      this._positionDrag = drag;
+      this._editingPath = `position-drag:${sceneKey}:${kind}`;
+      svg.classList.add('is-dragging');
+    }
+
+    _movePositionDrag(event) {
+      if (!this._positionDrag) return;
+      const svg = this.shadowRoot.querySelector('svg[data-position-preview-svg]');
+      if (!svg) return;
+      event.preventDefault();
+      const point = this._positionPointerPoint(event, svg);
+      const dx = point.x - this._positionDrag.start.x;
+      const dy = point.y - this._positionDrag.start.y;
+      const sceneKey = this._positionDrag.sceneKey;
+      const changes = this._positionDrag.values.map(({ componentKey, attr, value }) => ({
+        componentKey,
+        attr,
+        value: value + (attr.startsWith('x') ? dx : dy)
+      }));
+      this._queueScenePositionChanges(sceneKey, changes);
+      this._updatePositionPreviewDom(sceneKey, changes);
+    }
+
+    _endPositionDrag(event) {
+      if (!this._positionDrag) return;
+      const svg = this.shadowRoot.querySelector('svg[data-position-preview-svg]');
+      this._positionDrag.handle?.releasePointerCapture?.(event.pointerId);
+      this._positionDrag = null;
+      this._editingPath = '';
+      svg?.classList.remove('is-dragging');
+      this._flushEditorUpdate();
     }
 
     _render() {
@@ -2762,15 +3117,192 @@
             font-size: 12px;
             padding: 4px 0;
           }
+          .position-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+          }
+          .position-open-button,
+          .position-close-button {
+            border: 1px solid rgba(255,255,255,0.16);
+            background: rgba(14,165,233,0.18);
+            color: var(--primary-text-color);
+            border-radius: 8px;
+            padding: 9px 12px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 700;
+          }
+          .position-editor-modal {
+            position: fixed;
+            inset: 16px;
+            z-index: 1000;
+            display: grid;
+            place-items: center;
+            background: rgba(2,6,23,0.72);
+            backdrop-filter: blur(10px);
+          }
+          .position-editor-panel {
+            width: 100%;
+            max-width: min(1180px, calc(100vw - 32px));
+            max-height: calc(100vh - 32px);
+            min-width: 0;
+            overflow: hidden;
+            box-sizing: border-box;
+            border: 1px solid rgba(255,255,255,0.16);
+            border-radius: 10px;
+            background: #0b1120;
+            box-shadow: 0 24px 80px rgba(0,0,0,0.5);
+            padding: 14px;
+            display: grid;
+            grid-template-rows: auto minmax(0, 1fr);
+            gap: 12px;
+          }
+          .position-editor-header {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: center;
+          }
+          .position-editor-header h3 {
+            margin: 0;
+            font-size: 18px;
+          }
+          .position-editor-title-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+          }
+          .position-editor-kicker {
+            font-size: 11px;
+            color: var(--secondary-text-color);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+          }
+          .position-editor-workspace {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            align-items: start;
+            min-width: 0;
+            min-height: 0;
+            overflow: auto;
+          }
+          .position-editor-workspace > label,
+          .position-editor-workspace > select {
+            width: 100%;
+          }
+          .position-groups-modal {
+            max-height: none;
+            overflow: visible;
+            width: 100%;
+            box-sizing: border-box;
+            border-radius: 8px;
+            background: #0b1120;
+            padding: 4px 0 0;
+            min-width: 0;
+          }
+          @media (max-width: 900px) {
+            .position-editor-modal {
+              inset: 6px;
+            }
+            .position-editor-panel {
+              width: calc(100vw - 12px);
+              max-height: calc(100vh - 12px);
+              padding: 10px;
+            }
+            .position-editor-workspace {
+              gap: 10px;
+            }
+            .position-groups-modal {
+              max-height: none;
+            }
+            .position-pair-grid {
+              grid-template-columns: minmax(0, 1fr);
+            }
+          }
           .position-groups {
             display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
             gap: 10px;
+            min-width: 0;
+          }
+          .position-preview-frame {
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 8px;
+            overflow: hidden;
+            background: #020617;
+            width: 100%;
+            flex: 0 0 auto;
+            box-sizing: border-box;
+            min-width: 0;
+          }
+          .position-preview-svg {
+            display: block;
+            width: 100%;
+            height: auto;
+            touch-action: none;
+            user-select: none;
+          }
+          .position-preview-dim {
+            fill: #020817;
+            opacity: 0.42;
+          }
+          .position-preview-guide {
+            stroke: rgba(226,232,240,0.78);
+            stroke-width: 1.5;
+            stroke-linecap: round;
+            pointer-events: none;
+          }
+          .position-preview-label,
+          .position-preview-power {
+            fill: #f8fafc;
+            text-anchor: middle;
+            paint-order: stroke;
+            stroke: rgba(2,6,23,0.8);
+            stroke-width: 3px;
+            stroke-linejoin: round;
+            pointer-events: none;
+          }
+          .position-preview-label {
+            font-size: 13px;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            opacity: 0.78;
+          }
+          .position-preview-power {
+            font-size: 18px;
+            font-weight: 800;
+          }
+          .position-preview-text,
+          .position-guide-handle {
+            cursor: grab;
+          }
+          .position-preview-svg.is-dragging .position-preview-text,
+          .position-preview-svg.is-dragging .position-guide-handle {
+            cursor: grabbing;
+          }
+          .position-text-grip,
+          .position-guide-handle {
+            fill: rgba(14,165,233,0.86);
+            stroke: rgba(248,250,252,0.94);
+            stroke-width: 2;
+            filter: drop-shadow(0 2px 6px rgba(2,6,23,0.45));
+          }
+          .position-text-grip {
+            fill: rgba(34,197,94,0.88);
           }
           .position-group {
-            border-top: 1px solid rgba(255,255,255,0.08);
-            padding-top: 10px;
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 8px;
+            padding: 10px;
             display: grid;
             gap: 8px;
+            position: relative;
+            z-index: 1;
+            background: #0b1120;
+            min-width: 0;
           }
           .position-title {
             font-size: 12px;
@@ -2779,13 +3311,44 @@
             text-transform: uppercase;
             color: var(--primary-text-color);
           }
-          .position-fields {
+          .position-pair-grid {
             display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
             gap: 6px 8px;
           }
-          .position-fields label {
-            align-self: end;
+          .position-pair-row {
+            display: grid;
+            grid-template-columns: minmax(58px, auto) minmax(0, 1fr) minmax(0, 1fr);
+            align-items: center;
+            gap: 6px;
+            min-width: 0;
+          }
+          .position-pair-title {
+            color: var(--secondary-text-color);
+            font-size: 11px;
+            font-weight: 700;
+            white-space: nowrap;
+          }
+          .position-axis-field {
+            display: grid;
+            grid-template-columns: auto minmax(0, 1fr);
+            gap: 4px;
+            align-items: center;
+            min-width: 0;
+          }
+          .position-axis-field span {
+            color: var(--secondary-text-color);
+            font-size: 10px;
+            font-weight: 700;
+          }
+          .position-axis-field input {
+            padding: 6px 7px;
+            min-width: 0;
+            font-size: 12px;
+          }
+          .position-field {
+            display: grid;
+            min-width: 0;
           }
           .row {
             display: grid;
@@ -2960,7 +3523,9 @@
           <div class="block">
             <h4>Scene Positions</h4>
             <div class="grid">
-              ${this._positionEditorControls()}
+              <div class="position-actions">
+                <button type="button" class="position-open-button" data-open-position-editor>Visuell bearbeiten</button>
+              </div>
               <details class="position-json-details">
                 <summary>scene_component_map JSON</summary>
                 <textarea class="positions-json" data-json-path="scene_component_map" data-commit="change" spellcheck="false">${this._escapeHtml(this._jsonString('scene_component_map'))}</textarea>
@@ -2968,17 +3533,46 @@
             </div>
             <div class="hint">Battery percent follows the battery kW value automatically. Path geometry stays in YAML/JSON.</div>
           </div>
+          ${this._positionEditorModal()}
         </div>
       `;
 
-      const positionSceneSelect = this.shadowRoot.querySelector('select[data-position-scene]');
-      if (positionSceneSelect) {
+      this.shadowRoot.querySelectorAll('button[data-open-position-editor]').forEach((button) => {
+        button.addEventListener('click', () => {
+          this._positionEditorOpen = true;
+          this._render();
+        });
+      });
+
+      this.shadowRoot.querySelectorAll('button[data-close-position-editor]').forEach((button) => {
+        button.addEventListener('click', () => {
+          this._flushEditorUpdate();
+          this._positionEditorOpen = false;
+          this._render();
+        });
+      });
+
+      this.shadowRoot.querySelectorAll('select[data-position-scene]').forEach((positionSceneSelect) => {
+        positionSceneSelect.addEventListener('focus', () => {
+          this._editingPath = 'position-scene';
+        });
         positionSceneSelect.addEventListener('change', () => {
           this._flushEditorUpdate();
           this._positionSceneKey = positionSceneSelect.value;
+          this._editingPath = '';
           this._render();
         });
-      }
+        positionSceneSelect.addEventListener('blur', () => {
+          this._editingPath = '';
+        });
+      });
+
+      this.shadowRoot.querySelectorAll('svg[data-position-preview-svg]').forEach((positionPreviewSvg) => {
+        positionPreviewSvg.addEventListener('pointerdown', (event) => this._beginPositionDrag(event));
+        positionPreviewSvg.addEventListener('pointermove', (event) => this._movePositionDrag(event));
+        positionPreviewSvg.addEventListener('pointerup', (event) => this._endPositionDrag(event));
+        positionPreviewSvg.addEventListener('pointercancel', (event) => this._endPositionDrag(event));
+      });
 
       this.shadowRoot.querySelectorAll('input[data-position-path]').forEach((el) => {
         const path = el.dataset.positionPath;
@@ -2986,12 +3580,19 @@
           this._editingPath = `position:${path}`;
         });
         el.addEventListener('input', () => {
-          this._queueSceneComponentPosition(
+          const change = {
+            componentKey: el.dataset.positionComponent,
+            attr: el.dataset.positionAttr,
+            value: safeNum(el.value, 0)
+          };
+          const changes = this._positionLinkedChanges(
             el.dataset.positionSceneKey,
-            el.dataset.positionComponent,
-            el.dataset.positionAttr,
-            el.value
+            change.componentKey,
+            change.attr,
+            change.value
           );
+          this._queueScenePositionChanges(el.dataset.positionSceneKey, changes);
+          this._updatePositionPreviewDom(el.dataset.positionSceneKey, changes);
         });
         el.addEventListener('blur', () => {
           this._editingPath = '';
