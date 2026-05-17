@@ -183,7 +183,7 @@ assert.match(
 
 assert.match(
   source,
-  /const POSITION_EDITOR_GROUPS = Object\.freeze\(\[[\s\S]*title: 'Solar'[\s\S]*title: 'Netz'[\s\S]*title: 'Haus'[\s\S]*title: 'Batterie'[\s\S]*title: 'EV 1'[\s\S]*scene: 'charging'[\s\S]*title: 'EV 2'[\s\S]*scene: 'dual_charging'[\s\S]*\]\);/,
+  /const POSITION_EDITOR_GROUPS = Object\.freeze\(\[[\s\S]*title: 'Solar'[\s\S]*title: 'Grid'[\s\S]*title: 'Home'[\s\S]*title: 'Battery'[\s\S]*title: 'EV 1'[\s\S]*scene: 'charging'[\s\S]*title: 'EV 2'[\s\S]*scene: 'dual_charging'[\s\S]*\]\);/,
   'visual editor should provide per-component controls for fixed nodes and charging EV nodes'
 );
 
@@ -207,7 +207,7 @@ assert.match(
 
 assert.match(
   source,
-  /_positionEditorModal\(\) \{[\s\S]*data-position-editor-modal[\s\S]*data-close-position-editor[^>]*>Schliessen<\/button>[\s\S]*this\._positionEditorControls\(\{ modal: true \}\)/,
+  /_positionEditorModal\(\) \{[\s\S]*data-position-editor-modal[\s\S]*data-close-position-editor[^>]*>\$\{this\._t\('editor\.position_close_button', 'Close'\)\}<\/button>[\s\S]*this\._positionEditorControls\(\{ modal: true \}\)/,
   'visual position editor should render the large editing surface inside a modal'
 );
 

@@ -101,7 +101,18 @@
         lang_en: 'Inglese',
         lang_es: 'Spagnolo',
         lang_fr: 'Francese',
-        lang_de: 'Tedesco'
+        lang_de: 'Tedesco',
+        position_open_button: 'Modifica visiva',
+        position_modal_title: 'Modifica visiva',
+        position_modal_kicker: 'Posizioni scena',
+        position_close_button: 'Chiudi',
+        position_field_scene: 'Scena',
+        position_field_label: 'Etichetta',
+        position_field_value: 'Valore',
+        position_field_guide_a: 'Linea A',
+        position_field_guide_b: 'Linea B',
+        section_scene_positions: 'Posizioni scena',
+        position_hint: 'La percentuale della batteria segue automaticamente il valore in kW. La geometria dei percorsi resta in YAML/JSON.'
       }
     },
     en: {
@@ -166,7 +177,18 @@
         lang_en: 'English',
         lang_es: 'Spanish',
         lang_fr: 'French',
-        lang_de: 'German'
+        lang_de: 'German',
+        position_open_button: 'Edit visually',
+        position_modal_title: 'Edit visually',
+        position_modal_kicker: 'Scene positions',
+        position_close_button: 'Close',
+        position_field_scene: 'Scene',
+        position_field_label: 'Label',
+        position_field_value: 'Value',
+        position_field_guide_a: 'Guide A',
+        position_field_guide_b: 'Guide B',
+        section_scene_positions: 'Scene positions',
+        position_hint: 'Battery percent follows the battery kW value automatically. Path geometry stays in YAML/JSON.'
       }
     },
     es: {
@@ -231,7 +253,18 @@
         lang_en: 'Ingles',
         lang_es: 'Espanol',
         lang_fr: 'Frances',
-        lang_de: 'Aleman'
+        lang_de: 'Aleman',
+        position_open_button: 'Edicion visual',
+        position_modal_title: 'Edicion visual',
+        position_modal_kicker: 'Posiciones de escena',
+        position_close_button: 'Cerrar',
+        position_field_scene: 'Escena',
+        position_field_label: 'Etiqueta',
+        position_field_value: 'Valor',
+        position_field_guide_a: 'Linea A',
+        position_field_guide_b: 'Linea B',
+        section_scene_positions: 'Posiciones de escena',
+        position_hint: 'El porcentaje de la bateria sigue automaticamente al valor en kW. La geometria de las rutas permanece en YAML/JSON.'
       }
     },
     fr: {
@@ -296,7 +329,18 @@
         lang_en: 'Anglais',
         lang_es: 'Espagnol',
         lang_fr: 'Francais',
-        lang_de: 'Allemand'
+        lang_de: 'Allemand',
+        position_open_button: 'Edition visuelle',
+        position_modal_title: 'Edition visuelle',
+        position_modal_kicker: 'Positions de scene',
+        position_close_button: 'Fermer',
+        position_field_scene: 'Scene',
+        position_field_label: 'Etiquette',
+        position_field_value: 'Valeur',
+        position_field_guide_a: 'Repere A',
+        position_field_guide_b: 'Repere B',
+        section_scene_positions: 'Positions de scene',
+        position_hint: 'Le pourcentage de la batterie suit automatiquement la valeur en kW. La geometrie des chemins reste en YAML/JSON.'
       }
     },
     de: {
@@ -361,7 +405,18 @@
         lang_en: 'Englisch',
         lang_es: 'Spanisch',
         lang_fr: 'Franzosisch',
-        lang_de: 'Deutsch'
+        lang_de: 'Deutsch',
+        position_open_button: 'Visuell bearbeiten',
+        position_modal_title: 'Visuell bearbeiten',
+        position_modal_kicker: 'Szenenpositionen',
+        position_close_button: 'Schliessen',
+        position_field_scene: 'Szene',
+        position_field_label: 'Beschriftung',
+        position_field_value: 'Wert',
+        position_field_guide_a: 'Linie A',
+        position_field_guide_b: 'Linie B',
+        section_scene_positions: 'Szenenpositionen',
+        position_hint: 'Batterie-Prozent folgt automatisch dem Batterie-kW-Wert. Pfad-Geometrie bleibt in YAML/JSON.'
       }
     }
   });
@@ -869,12 +924,21 @@
 
   const POSITION_EDITOR_GROUPS = Object.freeze([
     Object.freeze({ title: 'Solar', node: 'solar', label: 'solar-label', power: 'solar-power', guide: 'solar-guide' }),
-    Object.freeze({ title: 'Netz', node: 'grid', label: 'grid-label', power: 'grid-power', guide: 'grid-guide' }),
-    Object.freeze({ title: 'Haus', node: 'load', label: 'load-label', power: 'load-power', guide: 'load-guide' }),
-    Object.freeze({ title: 'Batterie', node: 'battery', label: 'battery-label', power: 'battery-power', guide: 'battery-guide' }),
+    Object.freeze({ title: 'Grid', node: 'grid', label: 'grid-label', power: 'grid-power', guide: 'grid-guide' }),
+    Object.freeze({ title: 'Home', node: 'load', label: 'load-label', power: 'load-power', guide: 'load-guide' }),
+    Object.freeze({ title: 'Battery', node: 'battery', label: 'battery-label', power: 'battery-power', guide: 'battery-guide' }),
     Object.freeze({ title: 'EV 1', node: 'ev', label: 'ev-label', power: 'ev-power', guide: 'ev-guide', scene: 'charging' }),
     Object.freeze({ title: 'EV 2', node: 'ev2', label: 'ev2-label', power: 'ev2-power', guide: 'ev2-guide', scene: 'dual_charging' })
   ]);
+
+  const POSITION_EDITOR_GROUP_I18N_KEYS = Object.freeze({
+    solar: 'card.node.solar',
+    grid: 'card.node.grid',
+    load: 'card.node.home',
+    battery: 'card.node.battery',
+    ev: 'card.node.ev',
+    ev2: 'card.node.ev'
+  });
 
   const POSITION_EDITOR_NODE_ORIGINS = Object.freeze({
     solar: Object.freeze({ x: 286, y: 155 }),
@@ -2720,7 +2784,7 @@
         x: guideStart.x
       };
       const textCenter = this._positionPreviewTextCenter(sceneKey, group);
-      const title = this._escapeHtml(group.title.toUpperCase());
+      const title = this._escapeHtml(this._positionGroupTitle(group).toUpperCase());
       const scene = this._escapeHtml(sceneKey);
       return `
         <g class="position-preview-group" data-position-preview-group="${this._escapeHtml(group.node)}">
@@ -2804,12 +2868,12 @@
     _positionGroupRows(sceneKey, group) {
       return `
         <div class="position-group">
-          <div class="position-title">${this._escapeHtml(group.title)}</div>
+          <div class="position-title">${this._escapeHtml(this._positionGroupTitle(group))}</div>
           <div class="position-pair-grid">
-            ${this._positionPairRow(sceneKey, 'Label', group.label, 'x', group.label, 'y')}
-            ${this._positionPairRow(sceneKey, 'Wert', group.power, 'x', group.power, 'y')}
-            ${this._positionPairRow(sceneKey, 'Strich A', group.guide, 'x1', group.guide, 'y1')}
-            ${this._positionPairRow(sceneKey, 'Strich B', group.guide, 'x2', group.guide, 'y2')}
+            ${this._positionPairRow(sceneKey, this._t('editor.position_field_label', 'Label'), group.label, 'x', group.label, 'y')}
+            ${this._positionPairRow(sceneKey, this._t('editor.position_field_value', 'Value'), group.power, 'x', group.power, 'y')}
+            ${this._positionPairRow(sceneKey, this._t('editor.position_field_guide_a', 'Guide A'), group.guide, 'x1', group.guide, 'y1')}
+            ${this._positionPairRow(sceneKey, this._t('editor.position_field_guide_b', 'Guide B'), group.guide, 'x2', group.guide, 'y2')}
           </div>
         </div>
       `;
@@ -2819,7 +2883,7 @@
       const selectedScene = this._selectedPositionScene();
       const modalClass = options.modal ? ' position-groups-modal' : '';
       return `
-        <label>Szene</label>
+        <label>${this._t('editor.position_field_scene', 'Scene')}</label>
         <select data-position-scene>
           ${this._positionSceneOptions(selectedScene)}
         </select>
@@ -2837,10 +2901,10 @@
           <div class="position-editor-panel">
             <div class="position-editor-header">
               <div>
-                <div class="position-editor-kicker">Scene Positions</div>
+                <div class="position-editor-kicker">${this._t('editor.position_modal_kicker', 'Scene positions')}</div>
                 <div class="position-editor-title-row">
-                  <h3>Visuell bearbeiten</h3>
-                  <button type="button" class="position-close-button" data-close-position-editor aria-label="Close">Schliessen</button>
+                  <h3>${this._t('editor.position_modal_title', 'Edit visually')}</h3>
+                  <button type="button" class="position-close-button" data-close-position-editor aria-label="${this._t('editor.position_close_button', 'Close')}">${this._t('editor.position_close_button', 'Close')}</button>
                 </div>
               </div>
             </div>
@@ -2850,6 +2914,14 @@
           </div>
         </div>
       `;
+    }
+
+    _positionGroupTitle(group) {
+      const key = POSITION_EDITOR_GROUP_I18N_KEYS[group.node];
+      const base = key ? this._t(key, group.title) : group.title;
+      if (group.node === 'ev') return `${base} 1`;
+      if (group.node === 'ev2') return `${base} 2`;
+      return base;
     }
 
     _positionGroupForComponent(componentKey) {
@@ -3521,17 +3593,17 @@
           </div>
 
           <div class="block">
-            <h4>Scene Positions</h4>
+            <h4>${this._t('editor.section_scene_positions', 'Scene positions')}</h4>
             <div class="grid">
               <div class="position-actions">
-                <button type="button" class="position-open-button" data-open-position-editor>Visuell bearbeiten</button>
+                <button type="button" class="position-open-button" data-open-position-editor>${this._t('editor.position_open_button', 'Edit visually')}</button>
               </div>
               <details class="position-json-details">
                 <summary>scene_component_map JSON</summary>
                 <textarea class="positions-json" data-json-path="scene_component_map" data-commit="change" spellcheck="false">${this._escapeHtml(this._jsonString('scene_component_map'))}</textarea>
               </details>
             </div>
-            <div class="hint">Battery percent follows the battery kW value automatically. Path geometry stays in YAML/JSON.</div>
+            <div class="hint">${this._t('editor.position_hint', 'Battery percent follows the battery kW value automatically. Path geometry stays in YAML/JSON.')}</div>
           </div>
           ${this._positionEditorModal()}
         </div>
