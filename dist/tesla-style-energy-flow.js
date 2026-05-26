@@ -3184,6 +3184,14 @@
     }
 
     _render() {
+      // Preserve open state of <details> elements across re-renders.
+      // HA calls set hass() on every entity update which triggers _render(),
+      // replacing innerHTML and collapsing all <details> nodes.
+      const openDetailKeys = new Set();
+      this.shadowRoot.querySelectorAll('details[data-key]').forEach((d) => {
+        if (d.open) openDetailKeys.add(d.dataset.key);
+      });
+
       const sensorIds = this._entityIdsByDomain('sensor');
       const switchIds = this._entityIdsByDomain('switch');
       const presenceIds = this._entityIdsByDomains(['binary_sensor', 'device_tracker', 'person', 'input_boolean']);
@@ -3607,7 +3615,7 @@
               <button type="button" class="visual-editor-btn position-open-button" data-open-position-editor>${this._t('editor.position_open_button', 'Edit visually')}</button>
               <span class="hint">${this._t('editor.position_hint', 'Battery percent follows the battery kW value automatically. Path geometry stays in YAML/JSON.')}</span>
             </div>
-            <details class="collapsible position-json-details" style="margin-top:8px">
+            <details class="collapsible position-json-details" data-key="scene-json" style="margin-top:8px">
               <summary>scene_component_map JSON</summary>
               <textarea class="positions-json" data-json-path="scene_component_map" data-commit="change" spellcheck="false">${this._escapeHtml(this._jsonString('scene_component_map'))}</textarea>
             </details>
@@ -3618,18 +3626,18 @@
             <h4>☀️ Solar</h4>
             <div class="grid">
               ${this._entitySelectRow(this._t('editor.sensor_solar', 'Solar Power'), 'entities.solar_power', powerIds('entities.solar_power'), this._t('editor.placeholder_sensor', '-- select sensor --'))}
-              <details class="collapsible">
-                <summary>Roof Array A / B (optional)</summary>
-                <div class="grid">
-                  ${this._entitySelectRow('Roof Array A Power', 'entities.roof_a_power', powerIds('entities.roof_a_power'), this._t('editor.placeholder_sensor', '-- select sensor --'))}
-                  ${this._entitySelectRow('Roof Array A Voltage', 'entities.roof_a_voltage', voltIds('entities.roof_a_voltage'), this._t('editor.placeholder_sensor', '-- select sensor --'))}
-                  ${this._entitySelectRow('Roof Array A Current', 'entities.roof_a_current', ampIds('entities.roof_a_current'), this._t('editor.placeholder_sensor', '-- select sensor --'))}
-                  ${this._entitySelectRow('Roof Array B Power', 'entities.roof_b_power', powerIds('entities.roof_b_power'), this._t('editor.placeholder_sensor', '-- select sensor --'))}
-                  ${this._entitySelectRow('Roof Array B Voltage', 'entities.roof_b_voltage', voltIds('entities.roof_b_voltage'), this._t('editor.placeholder_sensor', '-- select sensor --'))}
-                  ${this._entitySelectRow('Roof Array B Current', 'entities.roof_b_current', ampIds('entities.roof_b_current'), this._t('editor.placeholder_sensor', '-- select sensor --'))}
-                </div>
-              </details>
             </div>
+            <details class="collapsible" data-key="roof-arrays" style="margin-top:8px">
+              <summary>Roof Array A / B (optional)</summary>
+              <div class="grid" style="margin-top:6px">
+                ${this._entitySelectRow('Roof Array A Power', 'entities.roof_a_power', powerIds('entities.roof_a_power'), this._t('editor.placeholder_sensor', '-- select sensor --'))}
+                ${this._entitySelectRow('Roof Array A Voltage', 'entities.roof_a_voltage', voltIds('entities.roof_a_voltage'), this._t('editor.placeholder_sensor', '-- select sensor --'))}
+                ${this._entitySelectRow('Roof Array A Current', 'entities.roof_a_current', ampIds('entities.roof_a_current'), this._t('editor.placeholder_sensor', '-- select sensor --'))}
+                ${this._entitySelectRow('Roof Array B Power', 'entities.roof_b_power', powerIds('entities.roof_b_power'), this._t('editor.placeholder_sensor', '-- select sensor --'))}
+                ${this._entitySelectRow('Roof Array B Voltage', 'entities.roof_b_voltage', voltIds('entities.roof_b_voltage'), this._t('editor.placeholder_sensor', '-- select sensor --'))}
+                ${this._entitySelectRow('Roof Array B Current', 'entities.roof_b_current', ampIds('entities.roof_b_current'), this._t('editor.placeholder_sensor', '-- select sensor --'))}
+              </div>
+            </details>
           </div>
 
           <!-- ④ Grid sensors -->
@@ -3755,7 +3763,7 @@
                 <label>${this._t('editor.field_dynamic_bg', 'Enable dynamic background')}</label>
                 <input type="checkbox" data-path="dynamic_background" ${cfg.dynamic_background ? 'checked' : ''}>
               </div>
-              <details class="collapsible">
+              <details class="collapsible" data-key="bg-map">
                 <summary>Dynamic background map URLs (${Object.values(b).filter(Boolean).length} configured)</summary>
                 <div class="grid">
                   <label>background_map.default</label>
@@ -3811,6 +3819,11 @@
           ${this._positionEditorModal()}
         </div>
       `;
+
+      // Restore previously open <details> after innerHTML replacement.
+      this.shadowRoot.querySelectorAll('details[data-key]').forEach((d) => {
+        if (openDetailKeys.has(d.dataset.key)) d.open = true;
+      });
 
       this.shadowRoot.querySelectorAll('button[data-open-position-editor]').forEach((button) => {
         button.addEventListener('click', () => {
