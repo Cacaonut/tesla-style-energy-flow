@@ -77,6 +77,8 @@
         sensor_solar: 'Solar Power',
         sensor_grid: 'Grid Power',
         sensor_battery: 'Battery Power',
+        sensor_battery_charge: 'Potenza Carica Batteria',
+        sensor_battery_discharge: 'Potenza Scarica Batteria',
         sensor_load: 'Load Power',
         sensor_battery_level: 'Battery Level %',
         sensor_ev_power: 'EV Power',
@@ -153,6 +155,8 @@
         sensor_solar: 'Solar Power',
         sensor_grid: 'Grid Power',
         sensor_battery: 'Battery Power',
+        sensor_battery_charge: 'Battery Charge Power',
+        sensor_battery_discharge: 'Battery Discharge Power',
         sensor_load: 'Load Power',
         sensor_battery_level: 'Battery Level %',
         sensor_ev_power: 'EV Power',
@@ -229,6 +233,8 @@
         sensor_solar: 'Potencia Solar',
         sensor_grid: 'Potencia Red',
         sensor_battery: 'Potencia Bateria',
+        sensor_battery_charge: 'Potencia Carga Bateria',
+        sensor_battery_discharge: 'Potencia Descarga Bateria',
         sensor_load: 'Potencia Casa',
         sensor_battery_level: 'Nivel Bateria %',
         sensor_ev_power: 'Potencia EV',
@@ -305,6 +311,8 @@
         sensor_solar: 'Puissance Solaire',
         sensor_grid: 'Puissance Reseau',
         sensor_battery: 'Puissance Batterie',
+        sensor_battery_charge: 'Puissance Charge Batterie',
+        sensor_battery_discharge: 'Puissance Decharge Batterie',
         sensor_load: 'Puissance Maison',
         sensor_battery_level: 'Niveau Batterie %',
         sensor_ev_power: 'Puissance EV',
@@ -381,6 +389,8 @@
         sensor_solar: 'Solarleistung',
         sensor_grid: 'Netzleistung',
         sensor_battery: 'Batterieleistung',
+        sensor_battery_charge: 'Batterie Ladeleistung',
+        sensor_battery_discharge: 'Batterie Entladeleistung',
         sensor_load: 'Hausverbrauch',
         sensor_battery_level: 'Batteriestand %',
         sensor_ev_power: 'EV Leistung',
@@ -1020,6 +1030,8 @@
       roof_b_current: '',
       grid_power: '',
       battery_power: '',
+      battery_charge_power: '',
+      battery_discharge_power: '',
       load_power: '',
       battery_level: '',
       ev_power: '',
@@ -2304,6 +2316,14 @@
       const roofBCurrent = safeNum(this._entityState(cfg.entities.roof_b_current)?.state, 0);
       let batteryPower = toWatt(this._entityState(cfg.entities.battery_power));
       if (cfg.battery_invert) batteryPower *= -1;
+      // Separate charge/discharge entities override the combined battery_power sensor.
+      // charge entity is always positive (watts going into battery),
+      // discharge entity is always positive (watts coming out of battery).
+      if (cfg.entities.battery_charge_power || cfg.entities.battery_discharge_power) {
+        const chargePower = Math.max(0, toWatt(this._entityState(cfg.entities.battery_charge_power)));
+        const dischargePower = Math.max(0, toWatt(this._entityState(cfg.entities.battery_discharge_power)));
+        batteryPower = chargePower - dischargePower;
+      }
       const loadPower = toWatt(this._entityState(cfg.entities.load_power));
       const batteryLevel = toPct(this._entityState(cfg.entities.battery_level), 0);
       const batteryConfigured = !!(cfg.entities.battery_power || cfg.entities.battery_level);
@@ -3518,6 +3538,8 @@
               ${this._entitySelectRow('Roof Array B Current', 'entities.roof_b_current', sensorIds, this._t('editor.placeholder_sensor', '-- select sensor --'))}
               ${this._entitySelectRow(this._t('editor.sensor_grid', 'Grid Power'), 'entities.grid_power', sensorIds, this._t('editor.placeholder_sensor', '-- select sensor --'))}
               ${this._entitySelectRow(this._t('editor.sensor_battery', 'Battery Power'), 'entities.battery_power', sensorIds, this._t('editor.placeholder_sensor', '-- select sensor --'))}
+              ${this._entitySelectRow(this._t('editor.sensor_battery_charge', 'Battery Charge Power'), 'entities.battery_charge_power', sensorIds, this._t('editor.placeholder_sensor', '-- select sensor --'))}
+              ${this._entitySelectRow(this._t('editor.sensor_battery_discharge', 'Battery Discharge Power'), 'entities.battery_discharge_power', sensorIds, this._t('editor.placeholder_sensor', '-- select sensor --'))}
               ${this._entitySelectRow(this._t('editor.sensor_load', 'Load Power'), 'entities.load_power', sensorIds, this._t('editor.placeholder_sensor', '-- select sensor --'))}
               ${this._entitySelectRow(this._t('editor.sensor_battery_level', 'Battery Level %'), 'entities.battery_level', sensorIds, this._t('editor.placeholder_sensor', '-- select sensor --'))}
               ${this._entitySelectRow(this._t('editor.sensor_ev_power', 'EV Power'), 'entities.ev_power', sensorIds, this._t('editor.placeholder_sensor', '-- select sensor --'))}
