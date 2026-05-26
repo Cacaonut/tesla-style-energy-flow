@@ -76,6 +76,8 @@
         section_sensors: 'Sensori',
         sensor_solar: 'Solar Power',
         sensor_grid: 'Grid Power',
+        sensor_grid_import: 'Potenza Importazione Rete',
+        sensor_grid_export: 'Potenza Esportazione Rete',
         sensor_battery: 'Battery Power',
         sensor_battery_charge: 'Potenza Carica Batteria',
         sensor_battery_discharge: 'Potenza Scarica Batteria',
@@ -154,6 +156,8 @@
         section_sensors: 'Sensors',
         sensor_solar: 'Solar Power',
         sensor_grid: 'Grid Power',
+        sensor_grid_import: 'Grid Import Power',
+        sensor_grid_export: 'Grid Export Power',
         sensor_battery: 'Battery Power',
         sensor_battery_charge: 'Battery Charge Power',
         sensor_battery_discharge: 'Battery Discharge Power',
@@ -232,6 +236,8 @@
         section_sensors: 'Sensores',
         sensor_solar: 'Potencia Solar',
         sensor_grid: 'Potencia Red',
+        sensor_grid_import: 'Potencia Importacion Red',
+        sensor_grid_export: 'Potencia Exportacion Red',
         sensor_battery: 'Potencia Bateria',
         sensor_battery_charge: 'Potencia Carga Bateria',
         sensor_battery_discharge: 'Potencia Descarga Bateria',
@@ -310,6 +316,8 @@
         section_sensors: 'Capteurs',
         sensor_solar: 'Puissance Solaire',
         sensor_grid: 'Puissance Reseau',
+        sensor_grid_import: 'Puissance Importation Reseau',
+        sensor_grid_export: 'Puissance Exportation Reseau',
         sensor_battery: 'Puissance Batterie',
         sensor_battery_charge: 'Puissance Charge Batterie',
         sensor_battery_discharge: 'Puissance Decharge Batterie',
@@ -388,6 +396,8 @@
         section_sensors: 'Sensoren',
         sensor_solar: 'Solarleistung',
         sensor_grid: 'Netzleistung',
+        sensor_grid_import: 'Netzbezug (Einspeisung)',
+        sensor_grid_export: 'Netzeinspeisung (Export)',
         sensor_battery: 'Batterieleistung',
         sensor_battery_charge: 'Batterie Ladeleistung',
         sensor_battery_discharge: 'Batterie Entladeleistung',
@@ -1029,6 +1039,8 @@
       roof_b_voltage: '',
       roof_b_current: '',
       grid_power: '',
+      grid_import_power: '',
+      grid_export_power: '',
       battery_power: '',
       battery_charge_power: '',
       battery_discharge_power: '',
@@ -2307,7 +2319,15 @@
 
       const solarPower = toWatt(this._entityState(cfg.entities.solar_power));
       const gridRaw = toWatt(this._entityState(cfg.entities.grid_power));
-      const gridPower = cfg.grid_invert ? -gridRaw : gridRaw;
+      let gridPower = cfg.grid_invert ? -gridRaw : gridRaw;
+      // Separate import/export entities override the combined grid_power sensor.
+      // import entity is always positive (watts coming from grid),
+      // export entity is always positive (watts going to grid).
+      if (cfg.entities.grid_import_power || cfg.entities.grid_export_power) {
+        const importPower = Math.max(0, toWatt(this._entityState(cfg.entities.grid_import_power)));
+        const exportPower = Math.max(0, toWatt(this._entityState(cfg.entities.grid_export_power)));
+        gridPower = importPower - exportPower;
+      }
       const roofAPower = toWatt(this._entityState(cfg.entities.roof_a_power));
       const roofAVoltage = safeNum(this._entityState(cfg.entities.roof_a_voltage)?.state, 0);
       const roofACurrent = safeNum(this._entityState(cfg.entities.roof_a_current)?.state, 0);
@@ -2638,6 +2658,24 @@
       const domainSet = new Set(Array.isArray(domains) ? domains : []);
       return Object.keys(this._hass.states)
         .filter((id) => domainSet.has(id.split('.')[0]))
+        .sort((a, b) => a.localeCompare(b));
+    }
+
+    // Returns sensor entity IDs filtered by unit_of_measurement and/or device_class.
+    // Always includes the currently configured value even if it doesn't match.
+    _sensorIdsByUnitOrClass(units = [], deviceClasses = [], currentValue = '') {
+      if (!this._hass) return [];
+      const unitSet = new Set(units);
+      const classSet = new Set(deviceClasses);
+      return Object.keys(this._hass.states)
+        .filter((id) => {
+          if (!id.startsWith('sensor.')) return false;
+          if (id === currentValue) return true;
+          const attrs = this._hass.states[id]?.attributes || {};
+          if (unitSet.size > 0 && unitSet.has(attrs.unit_of_measurement)) return true;
+          if (classSet.size > 0 && classSet.has(attrs.device_class)) return true;
+          return false;
+        })
         .sort((a, b) => a.localeCompare(b));
     }
 
@@ -3149,6 +3187,12 @@
       const presenceIds = this._entityIdsByDomains(['binary_sensor', 'device_tracker', 'person', 'input_boolean']);
       const weatherIds = this._entityIdsByDomain('weather');
       const sunIds = this._entityIdsByDomain('sun');
+      // Filtered lists for common field types — reduces long dropdowns to plausible matches.
+      const cfg = this._config;
+      const powerIds = (path) => this._sensorIdsByUnitOrClass(['W', 'kW'], ['power'], String(this._getByPath(path) || ''));
+      const pctIds = (path) => this._sensorIdsByUnitOrClass(['%'], ['battery'], String(this._getByPath(path) || ''));
+      const voltIds = (path) => this._sensorIdsByUnitOrClass(['V'], ['voltage'], String(this._getByPath(path) || ''));
+      const ampIds = (path) => this._sensorIdsByUnitOrClass(['A'], ['current'], String(this._getByPath(path) || ''));
 
       const cfg = this._config;
       const b = cfg.background_map || {};
@@ -3529,25 +3573,27 @@
           <div class="block">
             <h4>${this._t('editor.section_sensors', 'Sensors')}</h4>
             <div class="grid">
-              ${this._entitySelectRow(this._t('editor.sensor_solar', 'Solar Power'), 'entities.solar_power', sensorIds, this._t('editor.placeholder_sensor', '-- select sensor --'))}
-              ${this._entitySelectRow('Roof Array A Power', 'entities.roof_a_power', sensorIds, this._t('editor.placeholder_sensor', '-- select sensor --'))}
-              ${this._entitySelectRow('Roof Array A Voltage', 'entities.roof_a_voltage', sensorIds, this._t('editor.placeholder_sensor', '-- select sensor --'))}
-              ${this._entitySelectRow('Roof Array A Current', 'entities.roof_a_current', sensorIds, this._t('editor.placeholder_sensor', '-- select sensor --'))}
-              ${this._entitySelectRow('Roof Array B Power', 'entities.roof_b_power', sensorIds, this._t('editor.placeholder_sensor', '-- select sensor --'))}
-              ${this._entitySelectRow('Roof Array B Voltage', 'entities.roof_b_voltage', sensorIds, this._t('editor.placeholder_sensor', '-- select sensor --'))}
-              ${this._entitySelectRow('Roof Array B Current', 'entities.roof_b_current', sensorIds, this._t('editor.placeholder_sensor', '-- select sensor --'))}
-              ${this._entitySelectRow(this._t('editor.sensor_grid', 'Grid Power'), 'entities.grid_power', sensorIds, this._t('editor.placeholder_sensor', '-- select sensor --'))}
-              ${this._entitySelectRow(this._t('editor.sensor_battery', 'Battery Power'), 'entities.battery_power', sensorIds, this._t('editor.placeholder_sensor', '-- select sensor --'))}
-              ${this._entitySelectRow(this._t('editor.sensor_battery_charge', 'Battery Charge Power'), 'entities.battery_charge_power', sensorIds, this._t('editor.placeholder_sensor', '-- select sensor --'))}
-              ${this._entitySelectRow(this._t('editor.sensor_battery_discharge', 'Battery Discharge Power'), 'entities.battery_discharge_power', sensorIds, this._t('editor.placeholder_sensor', '-- select sensor --'))}
-              ${this._entitySelectRow(this._t('editor.sensor_load', 'Load Power'), 'entities.load_power', sensorIds, this._t('editor.placeholder_sensor', '-- select sensor --'))}
-              ${this._entitySelectRow(this._t('editor.sensor_battery_level', 'Battery Level %'), 'entities.battery_level', sensorIds, this._t('editor.placeholder_sensor', '-- select sensor --'))}
-              ${this._entitySelectRow(this._t('editor.sensor_ev_power', 'EV Power'), 'entities.ev_power', sensorIds, this._t('editor.placeholder_sensor', '-- select sensor --'))}
-              ${this._entitySelectRow(this._t('editor.sensor_ev_battery', 'EV Battery %'), 'entities.ev_battery', sensorIds, this._t('editor.placeholder_sensor', '-- select sensor --'))}
+              ${this._entitySelectRow(this._t('editor.sensor_solar', 'Solar Power'), 'entities.solar_power', powerIds('entities.solar_power'), this._t('editor.placeholder_sensor', '-- select sensor --'))}
+              ${this._entitySelectRow('Roof Array A Power', 'entities.roof_a_power', powerIds('entities.roof_a_power'), this._t('editor.placeholder_sensor', '-- select sensor --'))}
+              ${this._entitySelectRow('Roof Array A Voltage', 'entities.roof_a_voltage', voltIds('entities.roof_a_voltage'), this._t('editor.placeholder_sensor', '-- select sensor --'))}
+              ${this._entitySelectRow('Roof Array A Current', 'entities.roof_a_current', ampIds('entities.roof_a_current'), this._t('editor.placeholder_sensor', '-- select sensor --'))}
+              ${this._entitySelectRow('Roof Array B Power', 'entities.roof_b_power', powerIds('entities.roof_b_power'), this._t('editor.placeholder_sensor', '-- select sensor --'))}
+              ${this._entitySelectRow('Roof Array B Voltage', 'entities.roof_b_voltage', voltIds('entities.roof_b_voltage'), this._t('editor.placeholder_sensor', '-- select sensor --'))}
+              ${this._entitySelectRow('Roof Array B Current', 'entities.roof_b_current', ampIds('entities.roof_b_current'), this._t('editor.placeholder_sensor', '-- select sensor --'))}
+              ${this._entitySelectRow(this._t('editor.sensor_grid', 'Grid Power'), 'entities.grid_power', powerIds('entities.grid_power'), this._t('editor.placeholder_sensor', '-- select sensor --'))}
+              ${this._entitySelectRow(this._t('editor.sensor_grid_import', 'Grid Import Power'), 'entities.grid_import_power', powerIds('entities.grid_import_power'), this._t('editor.placeholder_sensor', '-- select sensor --'))}
+              ${this._entitySelectRow(this._t('editor.sensor_grid_export', 'Grid Export Power'), 'entities.grid_export_power', powerIds('entities.grid_export_power'), this._t('editor.placeholder_sensor', '-- select sensor --'))}
+              ${this._entitySelectRow(this._t('editor.sensor_battery', 'Battery Power'), 'entities.battery_power', powerIds('entities.battery_power'), this._t('editor.placeholder_sensor', '-- select sensor --'))}
+              ${this._entitySelectRow(this._t('editor.sensor_battery_charge', 'Battery Charge Power'), 'entities.battery_charge_power', powerIds('entities.battery_charge_power'), this._t('editor.placeholder_sensor', '-- select sensor --'))}
+              ${this._entitySelectRow(this._t('editor.sensor_battery_discharge', 'Battery Discharge Power'), 'entities.battery_discharge_power', powerIds('entities.battery_discharge_power'), this._t('editor.placeholder_sensor', '-- select sensor --'))}
+              ${this._entitySelectRow(this._t('editor.sensor_load', 'Load Power'), 'entities.load_power', powerIds('entities.load_power'), this._t('editor.placeholder_sensor', '-- select sensor --'))}
+              ${this._entitySelectRow(this._t('editor.sensor_battery_level', 'Battery Level %'), 'entities.battery_level', pctIds('entities.battery_level'), this._t('editor.placeholder_sensor', '-- select sensor --'))}
+              ${this._entitySelectRow(this._t('editor.sensor_ev_power', 'EV Power'), 'entities.ev_power', powerIds('entities.ev_power'), this._t('editor.placeholder_sensor', '-- select sensor --'))}
+              ${this._entitySelectRow(this._t('editor.sensor_ev_battery', 'EV Battery %'), 'entities.ev_battery', pctIds('entities.ev_battery'), this._t('editor.placeholder_sensor', '-- select sensor --'))}
               ${this._entitySelectRow(this._t('editor.sensor_ev_switch', 'EV Charge Switch'), 'entities.ev_charge_switch', switchIds, this._t('editor.placeholder_switch', '-- select switch --'))}
               ${this._entitySelectRow('EV 1 Presence', 'entities.ev_presence', presenceIds, '-- select presence entity --')}
-              ${this._entitySelectRow(this._t('editor.sensor_ev2_power', 'EV 2 Power'), 'entities.ev2_power', sensorIds, this._t('editor.placeholder_sensor', '-- select sensor --'))}
-              ${this._entitySelectRow(this._t('editor.sensor_ev2_battery', 'EV 2 Battery %'), 'entities.ev2_battery', sensorIds, this._t('editor.placeholder_sensor', '-- select sensor --'))}
+              ${this._entitySelectRow(this._t('editor.sensor_ev2_power', 'EV 2 Power'), 'entities.ev2_power', powerIds('entities.ev2_power'), this._t('editor.placeholder_sensor', '-- select sensor --'))}
+              ${this._entitySelectRow(this._t('editor.sensor_ev2_battery', 'EV 2 Battery %'), 'entities.ev2_battery', pctIds('entities.ev2_battery'), this._t('editor.placeholder_sensor', '-- select sensor --'))}
               ${this._entitySelectRow(this._t('editor.sensor_ev2_switch', 'EV 2 Charge Switch'), 'entities.ev2_charge_switch', switchIds, this._t('editor.placeholder_switch', '-- select switch --'))}
               ${this._entitySelectRow('EV 2 Presence', 'entities.ev2_presence', presenceIds, '-- select presence entity --')}
               ${this._entitySelectRow(this._t('editor.sensor_weather', 'Weather Entity'), 'entities.weather', weatherIds, this._t('editor.placeholder_weather', '-- select weather --'))}
