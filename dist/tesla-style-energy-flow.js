@@ -2507,9 +2507,18 @@
       }
 
       this._activatePath('line-solar-load', 'flow-solar', solarToLoad, solarMin);
-      this._activatePath('line-grid-load', 'flow-broken', gridImportVisual, gridMin);
-      this._activatePath('line-grid-load', 'flow-green', batteryToGrid, Math.max(1, Math.min(gridMin, batteryMin)), true);
-      this._activatePath('line-battery-load', 'flow-green', Math.max(battToLoad, batteryToGrid), Math.max(1, Math.min(gridMin, batteryMin)));
+      // line-grid-load: forward = grid imports to home junction; reverse = battery exports via junction to grid.
+      // Only activate one direction at a time to avoid the two calls overwriting each other's flow-reverse flag.
+      if (batteryToGrid >= Math.max(1, Math.min(gridMin, batteryMin)) && gridImportVisual < gridMin) {
+        // Battery is exporting to grid and grid is NOT simultaneously importing above threshold:
+        // show battery→junction→grid (reverse on this path)
+        this._activatePath('line-grid-load', 'flow-green', batteryToGrid, Math.max(1, Math.min(gridMin, batteryMin)), true);
+      } else {
+        // Normal grid import (or both: grid import dominates, battery export is low/zero)
+        this._activatePath('line-grid-load', 'flow-broken', gridImportVisual, gridMin);
+      }
+      const battLoadThreshold = Math.max(1, Math.min(gridMin, batteryMin));
+      this._activatePath('line-battery-load', 'flow-green', Math.max(battToLoad, batteryToGrid), battLoadThreshold);
 
       const homeTotal = solarToLoad + battToLoad + gridToLoadVisual;
       const homeCls = this._dominantFlowClass(solarToLoad, battToLoad, gridToLoadVisual, 'flow-solar');
@@ -2517,7 +2526,8 @@
 
       this._activatePath('line-solar-battery', 'flow-solar', solarToBattery, batteryMin);
       this._activatePath('line-grid-battery', 'flow-broken', gridToBattery, batteryMin);
-      this._activatePath('line-solar-grid', 'flow-green', gridExportVisual, Math.max(1, gridMin));
+      // line-solar-grid: only solar export; battery→grid is shown via line-battery-load + line-grid-load (reverse)
+      this._activatePath('line-solar-grid', 'flow-green', solarExport, Math.max(1, gridMin));
 
       const evTotal = solarToEv + battToEv + gridToEv;
       const evCls = this._dominantFlowClass(solarToEv, battToEv, gridToEv, 'flow-green');
