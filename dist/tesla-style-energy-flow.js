@@ -1358,6 +1358,7 @@
       this._warnedBatteryInvertIgnored = false;
       this._smoothState = {};
       this._pathLastActive = {};
+      this._lastDominant = {};
     }
 
     setConfig(config) {
@@ -1371,6 +1372,7 @@
       this._warnedBatteryInvertIgnored = false;
       this._smoothState = {};
       this._pathLastActive = {};
+      this._lastDominant = {};
       this._render();
     }
 
@@ -1484,11 +1486,26 @@
       this._pathLastActive[key] = true;
     }
 
-    _dominantFlowClass(solarW, batteryW, gridW, fallback) {
-      if (gridW >= solarW && gridW >= batteryW) return 'flow-broken';
-      if (batteryW >= solarW && batteryW >= gridW) return 'flow-green';
-      if (solarW >= batteryW && solarW >= gridW) return 'flow-solar';
-      return fallback || 'flow-solar';
+    _dominantFlowClass(id, solarW, batteryW, gridW, fallback) {
+      const values = { 'flow-solar': solarW, 'flow-green': batteryW, 'flow-broken': gridW };
+      // Raw winner this frame.
+      let raw = fallback || 'flow-solar';
+      let max = -Infinity;
+      for (const cls of Object.keys(values)) {
+        if (values[cls] > max) { max = values[cls]; raw = cls; }
+      }
+      // Hysteresis: when two sources are similar (e.g. battery 800 W and grid
+      // 820 W feeding the home node), strict comparison flips the color every
+      // render. Stay on the previous winner unless the new candidate exceeds
+      // it by 15 %. id is per-line ('home', 'ev') so the two lines track
+      // independently.
+      const STICK_MARGIN = 1.15;
+      const last = this._lastDominant[id];
+      if (!last || last === raw || values[raw] > values[last] * STICK_MARGIN) {
+        this._lastDominant[id] = raw;
+        return raw;
+      }
+      return last;
     }
 
     // Time-based EWMA. Called once per render per smoothed channel. Since the
@@ -2692,7 +2709,7 @@
       this._activatePath('line-battery-load', 'flow-green', Math.max(battToLoad, batteryToGrid), battLoadThreshold);
 
       const homeTotal = solarToLoad + battToLoad + gridToLoadVisual;
-      const homeCls = this._dominantFlowClass(solarToLoad, battToLoad, gridToLoadVisual, 'flow-solar');
+      const homeCls = this._dominantFlowClass('home', solarToLoad, battToLoad, gridToLoadVisual, 'flow-solar');
       this._activatePath('line-junction-home-load', homeCls, homeTotal, homeMin);
 
       this._activatePath('line-solar-battery', 'flow-solar', solarToBattery, batteryMin);
@@ -2701,7 +2718,7 @@
       this._activatePath('line-solar-grid', 'flow-green', solarExport, Math.max(1, gridMin));
 
       const evTotal = solarToEv + battToEv + gridToEv;
-      const evCls = this._dominantFlowClass(solarToEv, battToEv, gridToEv, 'flow-green');
+      const evCls = this._dominantFlowClass('ev', solarToEv, battToEv, gridToEv, 'flow-green');
       const ev1Share = evDraw > 0 ? ev1Draw / evDraw : 0;
       const ev2Share = evDraw > 0 ? ev2Draw / evDraw : 0;
       this._activatePath('line-wallbox-ev', evCls, evTotal * ev1Share, 1);
