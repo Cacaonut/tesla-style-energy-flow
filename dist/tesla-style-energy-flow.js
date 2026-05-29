@@ -67,6 +67,8 @@
         field_background: 'Background URL',
         field_background_base: 'Background Assets Base (auto)',
         field_grid_invert: 'Inverti segno rete',
+        field_ev_in_load: 'Potenza EV gia inclusa nel consumo casa',
+        field_ev2_in_load: 'Potenza EV 2 gia inclusa nel consumo casa',
         field_show_labels: 'Mostra etichette',
         field_hide_ev_idle: 'Nascondi EV se non in carica',
         field_scene_scale: 'Scene Scale',
@@ -147,6 +149,8 @@
         field_background: 'Background URL',
         field_background_base: 'Background Assets Base (auto)',
         field_grid_invert: 'Invert grid sign',
+        field_ev_in_load: 'EV power already included in home load',
+        field_ev2_in_load: 'EV 2 power already included in home load',
         field_show_labels: 'Show labels',
         field_hide_ev_idle: 'Hide EV when idle',
         field_scene_scale: 'Scene Scale',
@@ -227,6 +231,8 @@
         field_background: 'URL de fondo',
         field_background_base: 'Base de assets de fondo (auto)',
         field_grid_invert: 'Invertir signo de red',
+        field_ev_in_load: 'Potencia EV ya incluida en consumo casa',
+        field_ev2_in_load: 'Potencia EV 2 ya incluida en consumo casa',
         field_show_labels: 'Mostrar etiquetas',
         field_hide_ev_idle: 'Ocultar EV si no carga',
         field_scene_scale: 'Escala de escena',
@@ -307,6 +313,8 @@
         field_background: 'URL du fond',
         field_background_base: 'Base assets fond (auto)',
         field_grid_invert: 'Inverser signe reseau',
+        field_ev_in_load: 'Puissance EV deja incluse dans conso maison',
+        field_ev2_in_load: 'Puissance EV 2 deja incluse dans conso maison',
         field_show_labels: 'Afficher etiquettes',
         field_hide_ev_idle: 'Masquer EV si inactif',
         field_scene_scale: 'Echelle scene',
@@ -387,6 +395,8 @@
         field_background: 'Hintergrund URL',
         field_background_base: 'Hintergrund Asset-Basis (auto)',
         field_grid_invert: 'Netz-Vorzeichen invertieren',
+        field_ev_in_load: 'EV-Leistung bereits im Hausverbrauch enthalten',
+        field_ev2_in_load: 'EV 2 Leistung bereits im Hausverbrauch enthalten',
         field_show_labels: 'Labels anzeigen',
         field_hide_ev_idle: 'EV ausblenden wenn nicht laedt',
         field_scene_scale: 'Szenen-Skalierung',
@@ -1020,6 +1030,14 @@
     scene_scale: 1,
     grid_invert: false,
     battery_invert: false,
+    // Set to true when the load_power sensor already INCLUDES the EV's
+    // consumption (typical for whole-home smart meters like SMA SHM 2.0
+    // or SolarEdge total_consumption when the wallbox is on the house
+    // circuit). The card will subtract ev_power from load_power before
+    // allocating solar/grid flow so the battery does not get "starved"
+    // by double-counted EV draw. Same for ev2_in_load.
+    ev_in_load: false,
+    ev2_in_load: false,
     ev_label: '',
     ev2_label: '',
     roof_a_label: 'ARRAY A',
@@ -2416,11 +2434,29 @@
           console.warn('[tesla-style-energy-flow] battery_invert is ignored because battery_charge_power / battery_discharge_power are configured. Remove battery_invert from your YAML.');
         }
       }
-      const loadPower = toWatt(this._entityState(cfg.entities.load_power));
+      let loadPower = toWatt(this._entityState(cfg.entities.load_power));
       const batteryLevel = toPct(this._entityState(cfg.entities.battery_level), 0);
       const batteryConfigured = !!(cfg.entities.battery_power || cfg.entities.battery_level);
       const evData = this._collectEvData();
       const evPower = evData.totalPower;
+
+      // Whole-home meters (SMA SHM 2.0, SolarEdge total_consumption, …) usually
+      // already include the wallbox draw in load_power. When the user also
+      // configures ev_power / ev2_power, the card would double-count and starve
+      // the battery in the allocation. Subtract the per-vehicle power here so
+      // both the displayed Haus value and the flow allocation reflect the
+      // home's real non-EV consumption. Lookup by key (not by visibleVehicles
+      // order which may reorder based on activity).
+      if (cfg.ev_in_load || cfg.ev2_in_load) {
+        const ev1Vehicle = evData.vehicles.find((v) => v.key === 'ev1');
+        const ev2Vehicle = evData.vehicles.find((v) => v.key === 'ev2');
+        if (cfg.ev_in_load) {
+          loadPower = Math.max(0, loadPower - Math.max(0, ev1Vehicle?.power || 0));
+        }
+        if (cfg.ev2_in_load) {
+          loadPower = Math.max(0, loadPower - Math.max(0, ev2Vehicle?.power || 0));
+        }
+      }
       const solarMin = this._flowThreshold('solar_min_w', FLOW_MIN_W);
       const gridMin = this._flowThreshold('grid_min_w', FLOW_MIN_W);
       const batteryMin = this._flowThreshold('battery_min_w', FLOW_MIN_W);
@@ -3780,6 +3816,10 @@
               ${this._entitySelectRow(this._t('editor.sensor_ev_switch', 'EV Charge Switch'), 'entities.ev_charge_switch', switchIds, this._t('editor.placeholder_switch', '-- select switch --'))}
               ${this._entitySelectRow('EV 1 Presence', 'entities.ev_presence', presenceIds, '-- select presence entity --')}
             </div>
+            <div class="row">
+              <label>${this._t('editor.field_ev_in_load', 'EV power already included in home load')}</label>
+              <input type="checkbox" data-path="ev_in_load" ${cfg.ev_in_load ? 'checked' : ''}>
+            </div>
           </div>
 
           <!-- ⑧ EV 2 -->
@@ -3790,6 +3830,10 @@
               ${this._entitySelectRow(this._t('editor.sensor_ev2_battery', 'EV 2 Battery %'), 'entities.ev2_battery', pctIds('entities.ev2_battery'), this._t('editor.placeholder_sensor', '-- select sensor --'))}
               ${this._entitySelectRow(this._t('editor.sensor_ev2_switch', 'EV 2 Charge Switch'), 'entities.ev2_charge_switch', switchIds, this._t('editor.placeholder_switch', '-- select switch --'))}
               ${this._entitySelectRow('EV 2 Presence', 'entities.ev2_presence', presenceIds, '-- select presence entity --')}
+            </div>
+            <div class="row">
+              <label>${this._t('editor.field_ev2_in_load', 'EV 2 power already included in home load')}</label>
+              <input type="checkbox" data-path="ev2_in_load" ${cfg.ev2_in_load ? 'checked' : ''}>
             </div>
           </div>
 

@@ -48,6 +48,7 @@ Custom Home Assistant Lovelace card for energy flows on a house scene, with dyna
   - `thresholds.battery_min_w`
   - `ev_min_w`
 - Optional `ev_hide_when_idle` to hide EV labels/guide when not charging
+- Optional `ev_in_load` / `ev2_in_load` for whole-home meters that already include the wallbox draw in `load_power` (SMA SHM 2.0, SolarEdge total_consumption, …) — the card subtracts EV power from load before flow allocation so the battery is not double-counted
 - Optional `show_header` to show or hide the card title
 - Optional `font_scale` to improve readability on compact cards or tablet layouts
 - Optional `battery_invert` if your battery sensor uses the opposite sign convention
