@@ -1323,6 +1323,10 @@
       this._renderLang = DEFAULT_LANG;
       this._lastAppliedSceneFlowProfile = '';
       this._lastAppliedSceneFlowComponentProfile = '';
+      this._bgCacheKey = '';
+      this._bgCacheValue = '';
+      this._warnedGridInvertIgnored = false;
+      this._warnedBatteryInvertIgnored = false;
     }
 
     setConfig(config) {
@@ -1330,6 +1334,10 @@
       this._initialized = false;
       this._lastAppliedSceneFlowProfile = '';
       this._lastAppliedSceneFlowComponentProfile = '';
+      this._bgCacheKey = '';
+      this._bgCacheValue = '';
+      this._warnedGridInvertIgnored = false;
+      this._warnedBatteryInvertIgnored = false;
       this._render();
     }
 
@@ -1606,7 +1614,22 @@
       const cfg = this._config;
       if (!cfg.dynamic_background) return cfg.background;
 
+      // Memoize: this is called every dynamic render but only changes when
+      // weather/sun/EV state changes. The map composition and ~7 trim/lookup
+      // ops in _computeBackground are otherwise repeated identically each frame.
       const weatherState = this._entityState(cfg.entities.weather)?.state || '';
+      const sunState = this._entityState(cfg.entities.sun || 'sun.sun')?.state || '';
+      const cacheKey = `${weatherState}|${sunState}|${evCharging ? 1 : 0}|${hasSecondaryEv ? 1 : 0}`;
+      if (this._bgCacheKey === cacheKey) return this._bgCacheValue;
+
+      const result = this._computeBackground(evCharging, hasSecondaryEv, weatherState);
+      this._bgCacheKey = cacheKey;
+      this._bgCacheValue = result;
+      return result;
+    }
+
+    _computeBackground(evCharging, hasSecondaryEv, weatherState) {
+      const cfg = this._config;
       const period = this._scenePeriod(weatherState);
       const timeSlot = this._sceneTimeSlot(period);
       const weatherGroup = this._weatherGroup(weatherState);
@@ -2368,6 +2391,10 @@
         const importPower = Math.max(0, toWatt(this._entityState(cfg.entities.grid_import_power)));
         const exportPower = Math.max(0, toWatt(this._entityState(cfg.entities.grid_export_power)));
         gridPower = importPower - exportPower;
+        if (cfg.grid_invert && !this._warnedGridInvertIgnored) {
+          this._warnedGridInvertIgnored = true;
+          console.warn('[tesla-style-energy-flow] grid_invert is ignored because grid_import_power / grid_export_power are configured. Remove grid_invert from your YAML.');
+        }
       }
       const roofAPower = toWatt(this._entityState(cfg.entities.roof_a_power));
       const roofAVoltage = safeNum(this._entityState(cfg.entities.roof_a_voltage)?.state, 0);
@@ -2384,6 +2411,10 @@
         const chargePower = Math.max(0, toWatt(this._entityState(cfg.entities.battery_charge_power)));
         const dischargePower = Math.max(0, toWatt(this._entityState(cfg.entities.battery_discharge_power)));
         batteryPower = chargePower - dischargePower;
+        if (cfg.battery_invert && !this._warnedBatteryInvertIgnored) {
+          this._warnedBatteryInvertIgnored = true;
+          console.warn('[tesla-style-energy-flow] battery_invert is ignored because battery_charge_power / battery_discharge_power are configured. Remove battery_invert from your YAML.');
+        }
       }
       const loadPower = toWatt(this._entityState(cfg.entities.load_power));
       const batteryLevel = toPct(this._entityState(cfg.entities.battery_level), 0);

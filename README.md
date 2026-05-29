@@ -120,10 +120,11 @@ entities:
   ev_battery: sensor.ev_battery_level
   ev_charge_switch: switch.ev_charge
   ev_presence: binary_sensor.ev_presence
-  ev2_power: sensor.ev2_charging_power
-  ev2_battery: sensor.ev2_battery_level
-  ev2_charge_switch: switch.ev2_charge
-  ev2_presence: binary_sensor.ev2_presence
+  # Optional second EV — leave empty or omit entirely if you only have one car
+  # ev2_power: sensor.your_ev2_charging_power
+  # ev2_battery: sensor.your_ev2_battery_level
+  # ev2_charge_switch: switch.your_ev2_charge
+  # ev2_presence: binary_sensor.your_ev2_presence
   weather: weather.home
   sun: sun.sun
 ```
