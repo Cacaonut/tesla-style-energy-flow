@@ -2,19 +2,26 @@
 
 Custom Home Assistant Lovelace card for energy flows on a house scene, with dynamic weather/day-night backgrounds and EV-aware layout switching.
 
-> Recent additions:
+> **Fork notice** — This is a community fork of
+> [stexecute/tesla-style-energy-flow](https://github.com/stexecute/tesla-style-energy-flow)
+> (MIT). The following were contributed by this fork and already merged into upstream:
+> visual scene-position editor, editor debouncing, Tesla-style label hierarchy,
+> scene tone gradients per time-of-day, extended `background_map` keys.
 >
-> - Visual scene-position editor (modal with drag handles for label,
->   value and guide endpoints, per background scene)
-> - Editor debouncing and focus tracking to avoid cursor jumps while
->   typing in the config sidebar
-> - Tesla-style label hierarchy (smaller grey labels, larger white
->   values) with a dedicated charge-direction arrow between the value
->   and percentage row for battery and EV nodes
-> - Scene tone gradients per time-of-day (morning / afternoon /
->   evening / night / storm) layered on top of the existing weather
->   backgrounds
-> - Extended `background_map` keys for the new time-of-day slots
+> This fork currently adds the following on top of upstream (PR #22 open):
+>
+> - **fix:** Grid → Battery flow animation now always shown when the
+>   grid charges the battery (with or without simultaneous solar) *(not fully tested — feedback welcome)*
+> - **feat:** Separate battery charge / discharge power entities —
+>   `battery_charge_power` and `battery_discharge_power`
+> - **feat:** Separate grid import / export power entities —
+>   `grid_import_power` and `grid_export_power` (SMA SHM 2.0, Victron, Fronius, …)
+> - **feat:** Smart entity filtering in editor dropdowns (W/kW, %, V, A)
+> - **refactor:** Fully restructured editor UI — sensors grouped by topic,
+>   visual editor button at the top, friendly names in dropdowns
+>
+> Upstream maintainer: [@stexecute](https://github.com/stexecute).
+> Until PR #22 is merged this fork can be installed as a HACS Custom Repository.
 
 [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=stexecute&repository=tesla-style-energy-flow&category=dashboard)
 
