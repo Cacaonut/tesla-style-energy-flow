@@ -69,6 +69,7 @@
         field_grid_invert: 'Inverti segno rete',
         field_ev_in_load: 'Potenza EV gia inclusa nel consumo casa',
         field_ev2_in_load: 'Potenza EV 2 gia inclusa nel consumo casa',
+        field_smoothing: 'Attenuazione (sec, 0 = off)',
         field_show_labels: 'Mostra etichette',
         field_hide_ev_idle: 'Nascondi EV se non in carica',
         field_scene_scale: 'Scene Scale',
@@ -151,6 +152,7 @@
         field_grid_invert: 'Invert grid sign',
         field_ev_in_load: 'EV power already included in home load',
         field_ev2_in_load: 'EV 2 power already included in home load',
+        field_smoothing: 'Smoothing (sec, 0 = off)',
         field_show_labels: 'Show labels',
         field_hide_ev_idle: 'Hide EV when idle',
         field_scene_scale: 'Scene Scale',
@@ -233,6 +235,7 @@
         field_grid_invert: 'Invertir signo de red',
         field_ev_in_load: 'Potencia EV ya incluida en consumo casa',
         field_ev2_in_load: 'Potencia EV 2 ya incluida en consumo casa',
+        field_smoothing: 'Suavizado (seg, 0 = off)',
         field_show_labels: 'Mostrar etiquetas',
         field_hide_ev_idle: 'Ocultar EV si no carga',
         field_scene_scale: 'Escala de escena',
@@ -315,6 +318,7 @@
         field_grid_invert: 'Inverser signe reseau',
         field_ev_in_load: 'Puissance EV deja incluse dans conso maison',
         field_ev2_in_load: 'Puissance EV 2 deja incluse dans conso maison',
+        field_smoothing: 'Lissage (sec, 0 = off)',
         field_show_labels: 'Afficher etiquettes',
         field_hide_ev_idle: 'Masquer EV si inactif',
         field_scene_scale: 'Echelle scene',
@@ -397,6 +401,7 @@
         field_grid_invert: 'Netz-Vorzeichen invertieren',
         field_ev_in_load: 'EV-Leistung bereits im Hausverbrauch enthalten',
         field_ev2_in_load: 'EV 2 Leistung bereits im Hausverbrauch enthalten',
+        field_smoothing: 'Glättung (Sek, 0 = aus)',
         field_show_labels: 'Labels anzeigen',
         field_hide_ev_idle: 'EV ausblenden wenn nicht laedt',
         field_scene_scale: 'Szenen-Skalierung',
@@ -1038,6 +1043,12 @@
     // by double-counted EV draw. Same for ev2_in_load.
     ev_in_load: false,
     ev2_in_load: false,
+    // Tesla-style EWMA smoothing on solar / grid / battery / load values to
+    // tame the visual jumpiness caused by clouds, EV regulation, etc.
+    // 0 = off (raw live values). Typical: 10. Range: 0–60 seconds.
+    // EV power is intentionally NOT smoothed — charging start/stop should
+    // be visible immediately.
+    smoothing_seconds: 0,
     ev_label: '',
     ev2_label: '',
     roof_a_label: 'ARRAY A',
@@ -1345,6 +1356,7 @@
       this._bgCacheValue = '';
       this._warnedGridInvertIgnored = false;
       this._warnedBatteryInvertIgnored = false;
+      this._smoothState = {};
     }
 
     setConfig(config) {
@@ -1356,6 +1368,7 @@
       this._bgCacheValue = '';
       this._warnedGridInvertIgnored = false;
       this._warnedBatteryInvertIgnored = false;
+      this._smoothState = {};
       this._render();
     }
 
@@ -1461,6 +1474,26 @@
       if (batteryW >= solarW && batteryW >= gridW) return 'flow-green';
       if (solarW >= batteryW && solarW >= gridW) return 'flow-solar';
       return fallback || 'flow-solar';
+    }
+
+    // Time-based EWMA. Called once per render per smoothed channel. Since the
+    // hass setter only re-renders on tracked-entity change (perf optimization
+    // elsewhere), dt reflects the actual HA update cadence. The exponential
+    // formula gives correct smoothing regardless of variable update intervals.
+    _smooth(name, current) {
+      const tau = Math.max(0, safeNum(this._config.smoothing_seconds, 0));
+      if (tau <= 0) return current;
+      const now = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+      const prev = this._smoothState[name];
+      if (!prev) {
+        this._smoothState[name] = { value: current, ts: now };
+        return current;
+      }
+      const dtSec = Math.max(0.001, (now - prev.ts) / 1000);
+      const alpha = 1 - Math.exp(-dtSec / tau);
+      const next = prev.value + alpha * (current - prev.value);
+      this._smoothState[name] = { value: next, ts: now };
+      return next;
     }
 
     _flowThreshold(key, fallback = FLOW_MIN_W) {
@@ -2399,7 +2432,7 @@
     _renderDynamic() {
       const cfg = this._config;
 
-      const solarPower = toWatt(this._entityState(cfg.entities.solar_power));
+      let solarPower = toWatt(this._entityState(cfg.entities.solar_power));
       const gridRaw = toWatt(this._entityState(cfg.entities.grid_power));
       let gridPower = cfg.grid_invert ? -gridRaw : gridRaw;
       // Separate import/export entities override the combined grid_power sensor.
@@ -2457,6 +2490,15 @@
           loadPower = Math.max(0, loadPower - Math.max(0, ev2Vehicle?.power || 0));
         }
       }
+
+      // EWMA smoothing applied AFTER all sign / unit / ev_in_load corrections so
+      // the smoothed values are directly comparable across renders. EV power is
+      // intentionally not smoothed — start/stop transitions should be instant.
+      solarPower = this._smooth('solar', solarPower);
+      gridPower = this._smooth('grid', gridPower);
+      batteryPower = this._smooth('battery', batteryPower);
+      loadPower = this._smooth('load', loadPower);
+
       const solarMin = this._flowThreshold('solar_min_w', FLOW_MIN_W);
       const gridMin = this._flowThreshold('grid_min_w', FLOW_MIN_W);
       const batteryMin = this._flowThreshold('battery_min_w', FLOW_MIN_W);
@@ -3723,6 +3765,8 @@
               <input type="number" step="0.01" data-path="scene_scale" value="${safeNum(cfg.scene_scale, 1)}">
               <label>Font scale</label>
               <input type="number" step="0.05" min="0.75" max="1.35" data-path="font_scale" value="${safeNum(cfg.font_scale, 1)}">
+              <label>${this._t('editor.field_smoothing', 'Smoothing (sec, 0 = off)')}</label>
+              <input type="number" step="1" min="0" max="60" data-path="smoothing_seconds" value="${safeNum(cfg.smoothing_seconds, 0)}">
             </div>
           </div>
 
