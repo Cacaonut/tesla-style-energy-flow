@@ -1357,6 +1357,7 @@
       this._warnedGridInvertIgnored = false;
       this._warnedBatteryInvertIgnored = false;
       this._smoothState = {};
+      this._pathLastActive = {};
     }
 
     setConfig(config) {
@@ -1369,6 +1370,7 @@
       this._warnedGridInvertIgnored = false;
       this._warnedBatteryInvertIgnored = false;
       this._smoothState = {};
+      this._pathLastActive = {};
       this._render();
     }
 
@@ -1461,12 +1463,25 @@
     }
 
     _activatePath(id, cls, watt, minW = FLOW_MIN_W, reverse = false) {
-      if (watt <= 0) return;
-      if (watt < minW) return;
+      const key = id + '|' + cls;
+      if (watt <= 0) {
+        delete this._pathLastActive[key];
+        return;
+      }
+      // Hysteresis: once a path is active, keep it active until the value drops
+      // below half the activation threshold. Prevents on/off flicker for flows
+      // hovering near the minW boundary (e.g. battery at 60 W with minW 50 W).
+      const wasActive = !!this._pathLastActive[key];
+      const threshold = wasActive ? minW * 0.5 : minW;
+      if (watt < threshold) {
+        delete this._pathLastActive[key];
+        return;
+      }
       const el = this.shadowRoot.querySelector(`#${id}`);
       if (!el) return;
       el.classList.add('active', cls);
       el.classList.toggle('flow-reverse', !!reverse);
+      this._pathLastActive[key] = true;
     }
 
     _dominantFlowClass(solarW, batteryW, gridW, fallback) {
@@ -2447,10 +2462,10 @@
           console.warn('[tesla-style-energy-flow] grid_invert is ignored because grid_import_power / grid_export_power are configured. Remove grid_invert from your YAML.');
         }
       }
-      const roofAPower = toWatt(this._entityState(cfg.entities.roof_a_power));
+      const roofAPower = this._smooth('roof_a', toWatt(this._entityState(cfg.entities.roof_a_power)));
       const roofAVoltage = safeNum(this._entityState(cfg.entities.roof_a_voltage)?.state, 0);
       const roofACurrent = safeNum(this._entityState(cfg.entities.roof_a_current)?.state, 0);
-      const roofBPower = toWatt(this._entityState(cfg.entities.roof_b_power));
+      const roofBPower = this._smooth('roof_b', toWatt(this._entityState(cfg.entities.roof_b_power)));
       const roofBVoltage = safeNum(this._entityState(cfg.entities.roof_b_voltage)?.state, 0);
       const roofBCurrent = safeNum(this._entityState(cfg.entities.roof_b_current)?.state, 0);
       let batteryPower = toWatt(this._entityState(cfg.entities.battery_power));
@@ -2471,15 +2486,14 @@
       const batteryLevel = toPct(this._entityState(cfg.entities.battery_level), 0);
       const batteryConfigured = !!(cfg.entities.battery_power || cfg.entities.battery_level);
       const evData = this._collectEvData();
-      const evPower = evData.totalPower;
 
       // Whole-home meters (SMA SHM 2.0, SolarEdge total_consumption, …) usually
       // already include the wallbox draw in load_power. When the user also
       // configures ev_power / ev2_power, the card would double-count and starve
-      // the battery in the allocation. Subtract the per-vehicle power here so
-      // both the displayed Haus value and the flow allocation reflect the
-      // home's real non-EV consumption. Lookup by key (not by visibleVehicles
-      // order which may reorder based on activity).
+      // the battery in the allocation. Subtract the per-vehicle power (RAW
+      // values here, so the corrected load is mathematically accurate) before
+      // any smoothing is applied. Lookup by key (not by visibleVehicles order
+      // which may reorder based on activity).
       if (cfg.ev_in_load || cfg.ev2_in_load) {
         const ev1Vehicle = evData.vehicles.find((v) => v.key === 'ev1');
         const ev2Vehicle = evData.vehicles.find((v) => v.key === 'ev2');
@@ -2491,13 +2505,20 @@
         }
       }
 
-      // EWMA smoothing applied AFTER all sign / unit / ev_in_load corrections so
-      // the smoothed values are directly comparable across renders. EV power is
-      // intentionally not smoothed — start/stop transitions should be instant.
+      // EWMA smoothing applied AFTER all sign / unit / ev_in_load corrections.
+      // EV power is also smoothed (per-vehicle) because EV regulation jitter
+      // is the dominant source of allocation flicker — without this the
+      // allocated solarToEv / solarToBattery / gridToLoad shift every render.
+      // Trade-off: EV charge start/stop becomes visible over ~1.5 × tau.
       solarPower = this._smooth('solar', solarPower);
       gridPower = this._smooth('grid', gridPower);
       batteryPower = this._smooth('battery', batteryPower);
       loadPower = this._smooth('load', loadPower);
+      evData.vehicles.forEach((v) => {
+        v.power = this._smooth('ev_' + v.key, Math.max(0, v.power || 0));
+      });
+      evData.totalPower = evData.vehicles.reduce((sum, v) => sum + (v.power || 0), 0);
+      const evPower = evData.totalPower;
 
       const solarMin = this._flowThreshold('solar_min_w', FLOW_MIN_W);
       const gridMin = this._flowThreshold('grid_min_w', FLOW_MIN_W);
