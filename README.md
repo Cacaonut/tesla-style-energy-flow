@@ -48,6 +48,8 @@ Custom Home Assistant Lovelace card for energy flows on a house scene, with dyna
   - `thresholds.battery_min_w`
   - `ev_min_w`
 - Optional `ev_hide_when_idle` to hide EV labels/guide when not charging
+- Optional `ev_in_load` / `ev2_in_load` for whole-home meters that already include the wallbox draw in `load_power` (SMA SHM 2.0, SolarEdge total_consumption, …) — the card subtracts EV power from load before flow allocation so the battery is not double-counted
+- Optional `smoothing_seconds` (Tesla-style EWMA, default `0`) — set to e.g. `10` to dampen the cloud-induced jumpiness on Solar, Grid, Battery, Load. EV power stays unsmoothed so start/stop transitions remain instant.
 - Optional `show_header` to show or hide the card title
 - Optional `font_scale` to improve readability on compact cards or tablet layouts
 - Optional `battery_invert` if your battery sensor uses the opposite sign convention
@@ -120,10 +122,11 @@ entities:
   ev_battery: sensor.ev_battery_level
   ev_charge_switch: switch.ev_charge
   ev_presence: binary_sensor.ev_presence
-  ev2_power: sensor.ev2_charging_power
-  ev2_battery: sensor.ev2_battery_level
-  ev2_charge_switch: switch.ev2_charge
-  ev2_presence: binary_sensor.ev2_presence
+  # Optional second EV — leave empty or omit entirely if you only have one car
+  # ev2_power: sensor.your_ev2_charging_power
+  # ev2_battery: sensor.your_ev2_battery_level
+  # ev2_charge_switch: switch.your_ev2_charge
+  # ev2_presence: binary_sensor.your_ev2_presence
   weather: weather.home
   sun: sun.sun
 ```

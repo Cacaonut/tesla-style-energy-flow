@@ -67,6 +67,9 @@
         field_background: 'Background URL',
         field_background_base: 'Background Assets Base (auto)',
         field_grid_invert: 'Inverti segno rete',
+        field_ev_in_load: 'Potenza EV gia inclusa nel consumo casa',
+        field_ev2_in_load: 'Potenza EV 2 gia inclusa nel consumo casa',
+        field_smoothing: 'Attenuazione (sec, 0 = off)',
         field_show_labels: 'Mostra etichette',
         field_hide_ev_idle: 'Nascondi EV se non in carica',
         field_scene_scale: 'Scene Scale',
@@ -111,6 +114,8 @@
         position_modal_kicker: 'Posizioni scena',
         position_close_button: 'Chiudi',
         position_field_scene: 'Scena',
+        position_copy_from: 'Copia posizioni da',
+        position_copy_button: 'Applica',
         position_field_label: 'Etichetta',
         position_field_value: 'Valore',
         position_field_guide_a: 'Linea A',
@@ -147,6 +152,9 @@
         field_background: 'Background URL',
         field_background_base: 'Background Assets Base (auto)',
         field_grid_invert: 'Invert grid sign',
+        field_ev_in_load: 'EV power already included in home load',
+        field_ev2_in_load: 'EV 2 power already included in home load',
+        field_smoothing: 'Smoothing (sec, 0 = off)',
         field_show_labels: 'Show labels',
         field_hide_ev_idle: 'Hide EV when idle',
         field_scene_scale: 'Scene Scale',
@@ -191,6 +199,8 @@
         position_modal_kicker: 'Scene positions',
         position_close_button: 'Close',
         position_field_scene: 'Scene',
+        position_copy_from: 'Copy positions from',
+        position_copy_button: 'Apply',
         position_field_label: 'Label',
         position_field_value: 'Value',
         position_field_guide_a: 'Guide A',
@@ -227,6 +237,9 @@
         field_background: 'URL de fondo',
         field_background_base: 'Base de assets de fondo (auto)',
         field_grid_invert: 'Invertir signo de red',
+        field_ev_in_load: 'Potencia EV ya incluida en consumo casa',
+        field_ev2_in_load: 'Potencia EV 2 ya incluida en consumo casa',
+        field_smoothing: 'Suavizado (seg, 0 = off)',
         field_show_labels: 'Mostrar etiquetas',
         field_hide_ev_idle: 'Ocultar EV si no carga',
         field_scene_scale: 'Escala de escena',
@@ -271,6 +284,8 @@
         position_modal_kicker: 'Posiciones de escena',
         position_close_button: 'Cerrar',
         position_field_scene: 'Escena',
+        position_copy_from: 'Copiar posiciones de',
+        position_copy_button: 'Aplicar',
         position_field_label: 'Etiqueta',
         position_field_value: 'Valor',
         position_field_guide_a: 'Linea A',
@@ -307,6 +322,9 @@
         field_background: 'URL du fond',
         field_background_base: 'Base assets fond (auto)',
         field_grid_invert: 'Inverser signe reseau',
+        field_ev_in_load: 'Puissance EV deja incluse dans conso maison',
+        field_ev2_in_load: 'Puissance EV 2 deja incluse dans conso maison',
+        field_smoothing: 'Lissage (sec, 0 = off)',
         field_show_labels: 'Afficher etiquettes',
         field_hide_ev_idle: 'Masquer EV si inactif',
         field_scene_scale: 'Echelle scene',
@@ -351,6 +369,8 @@
         position_modal_kicker: 'Positions de scene',
         position_close_button: 'Fermer',
         position_field_scene: 'Scene',
+        position_copy_from: 'Copier positions depuis',
+        position_copy_button: 'Appliquer',
         position_field_label: 'Etiquette',
         position_field_value: 'Valeur',
         position_field_guide_a: 'Repere A',
@@ -387,6 +407,9 @@
         field_background: 'Hintergrund URL',
         field_background_base: 'Hintergrund Asset-Basis (auto)',
         field_grid_invert: 'Netz-Vorzeichen invertieren',
+        field_ev_in_load: 'EV-Leistung bereits im Hausverbrauch enthalten',
+        field_ev2_in_load: 'EV 2 Leistung bereits im Hausverbrauch enthalten',
+        field_smoothing: 'Glättung (Sek, 0 = aus)',
         field_show_labels: 'Labels anzeigen',
         field_hide_ev_idle: 'EV ausblenden wenn nicht laedt',
         field_scene_scale: 'Szenen-Skalierung',
@@ -431,6 +454,8 @@
         position_modal_kicker: 'Szenenpositionen',
         position_close_button: 'Schliessen',
         position_field_scene: 'Szene',
+        position_copy_from: 'Positionen kopieren von',
+        position_copy_button: 'Übernehmen',
         position_field_label: 'Beschriftung',
         position_field_value: 'Wert',
         position_field_guide_a: 'Linie A',
@@ -1020,6 +1045,20 @@
     scene_scale: 1,
     grid_invert: false,
     battery_invert: false,
+    // Set to true when the load_power sensor already INCLUDES the EV's
+    // consumption (typical for whole-home smart meters like SMA SHM 2.0
+    // or SolarEdge total_consumption when the wallbox is on the house
+    // circuit). The card will subtract ev_power from load_power before
+    // allocating solar/grid flow so the battery does not get "starved"
+    // by double-counted EV draw. Same for ev2_in_load.
+    ev_in_load: false,
+    ev2_in_load: false,
+    // Tesla-style EWMA smoothing on solar / grid / battery / load values to
+    // tame the visual jumpiness caused by clouds, EV regulation, etc.
+    // 0 = off (raw live values). Typical: 10. Range: 0–60 seconds.
+    // EV power is intentionally NOT smoothed — charging start/stop should
+    // be visible immediately.
+    smoothing_seconds: 0,
     ev_label: '',
     ev2_label: '',
     roof_a_label: 'ARRAY A',
@@ -1323,6 +1362,13 @@
       this._renderLang = DEFAULT_LANG;
       this._lastAppliedSceneFlowProfile = '';
       this._lastAppliedSceneFlowComponentProfile = '';
+      this._bgCacheKey = '';
+      this._bgCacheValue = '';
+      this._warnedGridInvertIgnored = false;
+      this._warnedBatteryInvertIgnored = false;
+      this._smoothState = {};
+      this._pathLastActive = {};
+      this._lastDominant = {};
     }
 
     setConfig(config) {
@@ -1330,12 +1376,55 @@
       this._initialized = false;
       this._lastAppliedSceneFlowProfile = '';
       this._lastAppliedSceneFlowComponentProfile = '';
+      this._bgCacheKey = '';
+      this._bgCacheValue = '';
+      this._warnedGridInvertIgnored = false;
+      this._warnedBatteryInvertIgnored = false;
+      this._smoothState = {};
+      this._pathLastActive = {};
+      this._lastDominant = {};
       this._render();
     }
 
     set hass(hass) {
+      const prevHass = this._hass;
       this._hass = hass;
-      this._render();
+      // HA fires set hass() on every state update in the whole instance, even for
+      // entities this card does not read. Skip re-rendering when nothing we
+      // actually use has changed. HA reuses the state object reference when an
+      // entity's state did not change, so a strict !== check is sufficient and
+      // O(N) over the ~24 tracked entity IDs.
+      if (!prevHass || this._hasTrackedHassChange(prevHass, hass)) {
+        this._render();
+      }
+    }
+
+    _trackedEntityIds() {
+      const e = (this._config && this._config.entities) || {};
+      return [
+        e.solar_power,
+        e.grid_power, e.grid_import_power, e.grid_export_power,
+        e.battery_power, e.battery_charge_power, e.battery_discharge_power, e.battery_level,
+        e.roof_a_power, e.roof_a_voltage, e.roof_a_current,
+        e.roof_b_power, e.roof_b_voltage, e.roof_b_current,
+        e.load_power,
+        e.ev_power, e.ev_battery, e.ev_charge_switch, e.ev_presence,
+        e.ev2_power, e.ev2_battery, e.ev2_charge_switch, e.ev2_presence,
+        e.weather,
+        e.sun || 'sun.sun',
+      ].filter(Boolean);
+    }
+
+    _hasTrackedHassChange(prev, next) {
+      if (prev === next) return false;
+      if (!prev || !next) return true;
+      if (prev.language !== next.language) return true;
+      if (prev.locale?.language !== next.locale?.language) return true;
+      const ids = this._trackedEntityIds();
+      for (const id of ids) {
+        if (prev.states[id] !== next.states[id]) return true;
+      }
+      return false;
     }
 
     getCardSize() {
@@ -1347,6 +1436,25 @@
         rows: 10,
         min_rows: 8
       };
+    }
+
+    connectedCallback() {
+      if (typeof IntersectionObserver === 'undefined') return;
+      if (this._visibilityObserver) return;
+      this._visibilityObserver = new IntersectionObserver((entries) => {
+        for (const entry of entries) {
+          this.classList.toggle('flow-offscreen', !entry.isIntersecting);
+        }
+      }, { threshold: 0 });
+      this._visibilityObserver.observe(this);
+    }
+
+    disconnectedCallback() {
+      if (this._visibilityObserver) {
+        this._visibilityObserver.disconnect();
+        this._visibilityObserver = null;
+      }
+      this.classList.remove('flow-offscreen');
     }
 
     _entityState(entityId) {
@@ -1386,19 +1494,67 @@
     }
 
     _activatePath(id, cls, watt, minW = FLOW_MIN_W, reverse = false) {
-      if (watt <= 0) return;
-      if (watt < minW) return;
+      const key = id + '|' + cls;
+      if (watt <= 0) {
+        delete this._pathLastActive[key];
+        return;
+      }
+      // Hysteresis: once a path is active, keep it active until the value drops
+      // below half the activation threshold. Prevents on/off flicker for flows
+      // hovering near the minW boundary (e.g. battery at 60 W with minW 50 W).
+      const wasActive = !!this._pathLastActive[key];
+      const threshold = wasActive ? minW * 0.5 : minW;
+      if (watt < threshold) {
+        delete this._pathLastActive[key];
+        return;
+      }
       const el = this.shadowRoot.querySelector(`#${id}`);
       if (!el) return;
       el.classList.add('active', cls);
       el.classList.toggle('flow-reverse', !!reverse);
+      this._pathLastActive[key] = true;
     }
 
-    _dominantFlowClass(solarW, batteryW, gridW, fallback) {
-      if (gridW >= solarW && gridW >= batteryW) return 'flow-broken';
-      if (batteryW >= solarW && batteryW >= gridW) return 'flow-green';
-      if (solarW >= batteryW && solarW >= gridW) return 'flow-solar';
-      return fallback || 'flow-solar';
+    _dominantFlowClass(id, solarW, batteryW, gridW, fallback) {
+      const values = { 'flow-solar': solarW, 'flow-green': batteryW, 'flow-broken': gridW };
+      // Raw winner this frame.
+      let raw = fallback || 'flow-solar';
+      let max = -Infinity;
+      for (const cls of Object.keys(values)) {
+        if (values[cls] > max) { max = values[cls]; raw = cls; }
+      }
+      // Hysteresis: when two sources are similar (e.g. battery 800 W and grid
+      // 820 W feeding the home node), strict comparison flips the color every
+      // render. Stay on the previous winner unless the new candidate exceeds
+      // it by 15 %. id is per-line ('home', 'ev') so the two lines track
+      // independently.
+      const STICK_MARGIN = 1.15;
+      const last = this._lastDominant[id];
+      if (!last || last === raw || values[raw] > values[last] * STICK_MARGIN) {
+        this._lastDominant[id] = raw;
+        return raw;
+      }
+      return last;
+    }
+
+    // Time-based EWMA. Called once per render per smoothed channel. Since the
+    // hass setter only re-renders on tracked-entity change (perf optimization
+    // elsewhere), dt reflects the actual HA update cadence. The exponential
+    // formula gives correct smoothing regardless of variable update intervals.
+    _smooth(name, current) {
+      const tau = Math.max(0, safeNum(this._config.smoothing_seconds, 0));
+      if (tau <= 0) return current;
+      const now = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+      const prev = this._smoothState[name];
+      if (!prev) {
+        this._smoothState[name] = { value: current, ts: now };
+        return current;
+      }
+      const dtSec = Math.max(0.001, (now - prev.ts) / 1000);
+      const alpha = 1 - Math.exp(-dtSec / tau);
+      const next = prev.value + alpha * (current - prev.value);
+      this._smoothState[name] = { value: next, ts: now };
+      return next;
     }
 
     _flowThreshold(key, fallback = FLOW_MIN_W) {
@@ -1570,7 +1726,22 @@
       const cfg = this._config;
       if (!cfg.dynamic_background) return cfg.background;
 
+      // Memoize: this is called every dynamic render but only changes when
+      // weather/sun/EV state changes. The map composition and ~7 trim/lookup
+      // ops in _computeBackground are otherwise repeated identically each frame.
       const weatherState = this._entityState(cfg.entities.weather)?.state || '';
+      const sunState = this._entityState(cfg.entities.sun || 'sun.sun')?.state || '';
+      const cacheKey = `${weatherState}|${sunState}|${evCharging ? 1 : 0}|${hasSecondaryEv ? 1 : 0}`;
+      if (this._bgCacheKey === cacheKey) return this._bgCacheValue;
+
+      const result = this._computeBackground(evCharging, hasSecondaryEv, weatherState);
+      this._bgCacheKey = cacheKey;
+      this._bgCacheValue = result;
+      return result;
+    }
+
+    _computeBackground(evCharging, hasSecondaryEv, weatherState) {
+      const cfg = this._config;
       const period = this._scenePeriod(weatherState);
       const timeSlot = this._sceneTimeSlot(period);
       const weatherGroup = this._weatherGroup(weatherState);
@@ -2154,7 +2325,12 @@
             opacity: 1;
             stroke-dasharray: var(--flow-seg, 62) var(--flow-gap, 82);
             animation: flowStream var(--flow-speed, 1.9s) linear infinite, flowPulse var(--flow-fade, 1.45s) ease-in-out infinite;
-            filter: drop-shadow(0 0 3px var(--flow-glow, rgba(125, 249, 255, 0.4)))
+            /* Dark contrast outline first (helps on light/busy backgrounds), then the
+               bright glow stack (helps on dark backgrounds). The outline is tight
+               (sub-pixel blur) so the colored stroke stays sharp. */
+            filter: drop-shadow(0 0 0.6px rgba(2, 8, 23, 0.95))
+                    drop-shadow(0 0 0.6px rgba(2, 8, 23, 0.85))
+                    drop-shadow(0 0 3px var(--flow-glow, rgba(125, 249, 255, 0.4)))
                     drop-shadow(0 0 12px var(--flow-glow, rgba(125, 249, 255, 0.4)));
           }
           .flow-line.active.flow-reverse {
@@ -2190,6 +2366,11 @@
           .hide-labels .flow-status {
             display: none;
           }
+          /* Pause CSS animations when the card is scrolled out of view.
+             Toggled by an IntersectionObserver on the host element. */
+          :host(.flow-offscreen) .flow-line.active {
+            animation-play-state: paused;
+          }
           @keyframes flowStream {
             to { stroke-dashoffset: -144; }
           }
@@ -2197,9 +2378,9 @@
             to { stroke-dashoffset: 144; }
           }
           @keyframes flowPulse {
-            0%, 100% { opacity: 0.8; stroke-width: 2.1; }
-            45% { opacity: 1; stroke-width: 2.9; }
-            82% { opacity: 0.9; stroke-width: 2.4; }
+            0%, 100% { opacity: 0.85; stroke-width: 2.4; }
+            45% { opacity: 1; stroke-width: 3.3; }
+            82% { opacity: 0.92; stroke-width: 2.8; }
           }
         </style>
         <ha-card>
@@ -2317,7 +2498,7 @@
     _renderDynamic() {
       const cfg = this._config;
 
-      const solarPower = toWatt(this._entityState(cfg.entities.solar_power));
+      let solarPower = toWatt(this._entityState(cfg.entities.solar_power));
       const gridRaw = toWatt(this._entityState(cfg.entities.grid_power));
       let gridPower = cfg.grid_invert ? -gridRaw : gridRaw;
       // Separate import/export entities override the combined grid_power sensor.
@@ -2327,11 +2508,15 @@
         const importPower = Math.max(0, toWatt(this._entityState(cfg.entities.grid_import_power)));
         const exportPower = Math.max(0, toWatt(this._entityState(cfg.entities.grid_export_power)));
         gridPower = importPower - exportPower;
+        if (cfg.grid_invert && !this._warnedGridInvertIgnored) {
+          this._warnedGridInvertIgnored = true;
+          console.warn('[tesla-style-energy-flow] grid_invert is ignored because grid_import_power / grid_export_power are configured. Remove grid_invert from your YAML.');
+        }
       }
-      const roofAPower = toWatt(this._entityState(cfg.entities.roof_a_power));
+      const roofAPower = this._smooth('roof_a', toWatt(this._entityState(cfg.entities.roof_a_power)));
       const roofAVoltage = safeNum(this._entityState(cfg.entities.roof_a_voltage)?.state, 0);
       const roofACurrent = safeNum(this._entityState(cfg.entities.roof_a_current)?.state, 0);
-      const roofBPower = toWatt(this._entityState(cfg.entities.roof_b_power));
+      const roofBPower = this._smooth('roof_b', toWatt(this._entityState(cfg.entities.roof_b_power)));
       const roofBVoltage = safeNum(this._entityState(cfg.entities.roof_b_voltage)?.state, 0);
       const roofBCurrent = safeNum(this._entityState(cfg.entities.roof_b_current)?.state, 0);
       let batteryPower = toWatt(this._entityState(cfg.entities.battery_power));
@@ -2343,12 +2528,49 @@
         const chargePower = Math.max(0, toWatt(this._entityState(cfg.entities.battery_charge_power)));
         const dischargePower = Math.max(0, toWatt(this._entityState(cfg.entities.battery_discharge_power)));
         batteryPower = chargePower - dischargePower;
+        if (cfg.battery_invert && !this._warnedBatteryInvertIgnored) {
+          this._warnedBatteryInvertIgnored = true;
+          console.warn('[tesla-style-energy-flow] battery_invert is ignored because battery_charge_power / battery_discharge_power are configured. Remove battery_invert from your YAML.');
+        }
       }
-      const loadPower = toWatt(this._entityState(cfg.entities.load_power));
+      let loadPower = toWatt(this._entityState(cfg.entities.load_power));
       const batteryLevel = toPct(this._entityState(cfg.entities.battery_level), 0);
       const batteryConfigured = !!(cfg.entities.battery_power || cfg.entities.battery_level);
       const evData = this._collectEvData();
+
+      // Whole-home meters (SMA SHM 2.0, SolarEdge total_consumption, …) usually
+      // already include the wallbox draw in load_power. When the user also
+      // configures ev_power / ev2_power, the card would double-count and starve
+      // the battery in the allocation. Subtract the per-vehicle power (RAW
+      // values here, so the corrected load is mathematically accurate) before
+      // any smoothing is applied. Lookup by key (not by visibleVehicles order
+      // which may reorder based on activity).
+      if (cfg.ev_in_load || cfg.ev2_in_load) {
+        const ev1Vehicle = evData.vehicles.find((v) => v.key === 'ev1');
+        const ev2Vehicle = evData.vehicles.find((v) => v.key === 'ev2');
+        if (cfg.ev_in_load) {
+          loadPower = Math.max(0, loadPower - Math.max(0, ev1Vehicle?.power || 0));
+        }
+        if (cfg.ev2_in_load) {
+          loadPower = Math.max(0, loadPower - Math.max(0, ev2Vehicle?.power || 0));
+        }
+      }
+
+      // EWMA smoothing applied AFTER all sign / unit / ev_in_load corrections.
+      // EV power is also smoothed (per-vehicle) because EV regulation jitter
+      // is the dominant source of allocation flicker — without this the
+      // allocated solarToEv / solarToBattery / gridToLoad shift every render.
+      // Trade-off: EV charge start/stop becomes visible over ~1.5 × tau.
+      solarPower = this._smooth('solar', solarPower);
+      gridPower = this._smooth('grid', gridPower);
+      batteryPower = this._smooth('battery', batteryPower);
+      loadPower = this._smooth('load', loadPower);
+      evData.vehicles.forEach((v) => {
+        v.power = this._smooth('ev_' + v.key, Math.max(0, v.power || 0));
+      });
+      evData.totalPower = evData.vehicles.reduce((sum, v) => sum + (v.power || 0), 0);
       const evPower = evData.totalPower;
+
       const solarMin = this._flowThreshold('solar_min_w', FLOW_MIN_W);
       const gridMin = this._flowThreshold('grid_min_w', FLOW_MIN_W);
       const batteryMin = this._flowThreshold('battery_min_w', FLOW_MIN_W);
@@ -2521,7 +2743,7 @@
       this._activatePath('line-battery-load', 'flow-green', Math.max(battToLoad, batteryToGrid), battLoadThreshold);
 
       const homeTotal = solarToLoad + battToLoad + gridToLoadVisual;
-      const homeCls = this._dominantFlowClass(solarToLoad, battToLoad, gridToLoadVisual, 'flow-solar');
+      const homeCls = this._dominantFlowClass('home', solarToLoad, battToLoad, gridToLoadVisual, 'flow-solar');
       this._activatePath('line-junction-home-load', homeCls, homeTotal, homeMin);
 
       this._activatePath('line-solar-battery', 'flow-solar', solarToBattery, batteryMin);
@@ -2530,7 +2752,18 @@
       this._activatePath('line-solar-grid', 'flow-green', solarExport, Math.max(1, gridMin));
 
       const evTotal = solarToEv + battToEv + gridToEv;
-      const evCls = this._dominantFlowClass(solarToEv, battToEv, gridToEv, 'flow-green');
+      // Mirror the line-solar-grid convention (always green when solar
+      // exports to grid because it's semantically positive) for EV charging:
+      // when >= 80 % of the wallbox draw comes from renewable sources
+      // (solar direct + battery), paint the line green regardless of which
+      // single source happens to be largest. Below that threshold fall back
+      // to the source-dominant color (yellow / green / red).
+      const evRenewableShare = evTotal > 0
+        ? (solarToEv + battToEv) / evTotal
+        : 0;
+      const evCls = evRenewableShare >= 0.8
+        ? 'flow-green'
+        : this._dominantFlowClass('ev', solarToEv, battToEv, gridToEv, 'flow-green');
       const ev1Share = evDraw > 0 ? ev1Draw / evDraw : 0;
       const ev2Share = evDraw > 0 ? ev2Draw / evDraw : 0;
       this._activatePath('line-wallbox-ev', evCls, evTotal * ev1Share, 1);
@@ -2559,7 +2792,9 @@
       this._editingPath = '';
       this._positionDrag = null;
       this._positionEditorOpen = false;
-      this._positionSceneKey = POSITION_EDITOR_SCENES[0]?.key || 'scene_day_clear_idle.png';
+      // Empty so _selectedPositionScene() falls back to the user's configured
+      // background — opening the editor lands on the scene they actually see.
+      this._positionSceneKey = '';
     }
 
     setConfig(config) {
@@ -2954,6 +3189,15 @@
         <select data-position-scene>
           ${this._positionSceneOptions(selectedScene)}
         </select>
+        <div class="position-copy-row">
+          <label>${this._t('editor.position_copy_from', 'Copy positions from')}</label>
+          <select data-position-copy-source>
+            ${this._positionSceneOptions('')}
+          </select>
+          <button type="button" data-copy-positions data-position-target="${this._escapeHtml(selectedScene)}">
+            ${this._t('editor.position_copy_button', 'Apply')}
+          </button>
+        </div>
         ${this._positionPreviewSvg(selectedScene)}
         <div class="position-groups${modalClass}">
           ${this._positionEditorGroups(selectedScene).map((group) => this._positionGroupRows(selectedScene, group)).join('')}
@@ -3041,6 +3285,25 @@
       nextMap[sceneKey] = scene;
       this._applyEditorValue('scene_component_map', nextMap);
       if (emit) this._emitConfig();
+    }
+
+    // Copy every label / power / guide coordinate from srcSceneKey onto
+    // dstSceneKey. Reads the FULLY MERGED source map (defaults + user
+    // overrides) so even a never-customised source still produces a copy.
+    _copyScenePositions(srcSceneKey, dstSceneKey) {
+      if (!srcSceneKey || !dstSceneKey || srcSceneKey === dstSceneKey) return;
+      const fullMap = this._sceneFlowComponentMap();
+      const srcScene = fullMap[srcSceneKey];
+      if (!srcScene) return;
+      const changes = [];
+      Object.keys(srcScene).forEach((componentKey) => {
+        const component = srcScene[componentKey] || {};
+        Object.keys(component).forEach((attr) => {
+          changes.push({ componentKey, attr, value: component[attr] });
+        });
+      });
+      if (changes.length === 0) return;
+      this._applyScenePositionChanges(dstSceneKey, changes, true);
     }
 
     _updateSceneComponentPosition(sceneKey, componentKey, attr, value, emit = true) {
@@ -3379,6 +3642,34 @@
             gap: 10px;
             min-width: 0;
           }
+          .position-copy-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 6px 0;
+            flex-wrap: wrap;
+          }
+          .position-copy-row label {
+            margin: 0;
+            font-size: 12px;
+            opacity: 0.85;
+          }
+          .position-copy-row select {
+            flex: 1 1 160px;
+            min-width: 120px;
+          }
+          .position-copy-row button {
+            padding: 4px 12px;
+            border-radius: 6px;
+            border: 1px solid rgba(255,255,255,0.18);
+            background: rgba(56,189,248,0.18);
+            color: inherit;
+            cursor: pointer;
+            font-size: 12px;
+          }
+          .position-copy-row button:hover {
+            background: rgba(56,189,248,0.28);
+          }
           .position-preview-frame {
             border: 1px solid rgba(255,255,255,0.12);
             border-radius: 8px;
@@ -3615,6 +3906,8 @@
               <input type="number" step="0.01" data-path="scene_scale" value="${safeNum(cfg.scene_scale, 1)}">
               <label>Font scale</label>
               <input type="number" step="0.05" min="0.75" max="1.35" data-path="font_scale" value="${safeNum(cfg.font_scale, 1)}">
+              <label>${this._t('editor.field_smoothing', 'Smoothing (sec, 0 = off)')}</label>
+              <input type="number" step="1" min="0" max="60" data-path="smoothing_seconds" value="${safeNum(cfg.smoothing_seconds, 0)}">
             </div>
           </div>
 
@@ -3708,6 +4001,10 @@
               ${this._entitySelectRow(this._t('editor.sensor_ev_switch', 'EV Charge Switch'), 'entities.ev_charge_switch', switchIds, this._t('editor.placeholder_switch', '-- select switch --'))}
               ${this._entitySelectRow('EV 1 Presence', 'entities.ev_presence', presenceIds, '-- select presence entity --')}
             </div>
+            <div class="row">
+              <label>${this._t('editor.field_ev_in_load', 'EV power already included in home load')}</label>
+              <input type="checkbox" data-path="ev_in_load" ${cfg.ev_in_load ? 'checked' : ''}>
+            </div>
           </div>
 
           <!-- ⑧ EV 2 -->
@@ -3718,6 +4015,10 @@
               ${this._entitySelectRow(this._t('editor.sensor_ev2_battery', 'EV 2 Battery %'), 'entities.ev2_battery', pctIds('entities.ev2_battery'), this._t('editor.placeholder_sensor', '-- select sensor --'))}
               ${this._entitySelectRow(this._t('editor.sensor_ev2_switch', 'EV 2 Charge Switch'), 'entities.ev2_charge_switch', switchIds, this._t('editor.placeholder_switch', '-- select switch --'))}
               ${this._entitySelectRow('EV 2 Presence', 'entities.ev2_presence', presenceIds, '-- select presence entity --')}
+            </div>
+            <div class="row">
+              <label>${this._t('editor.field_ev2_in_load', 'EV 2 power already included in home load')}</label>
+              <input type="checkbox" data-path="ev2_in_load" ${cfg.ev2_in_load ? 'checked' : ''}>
             </div>
           </div>
 
@@ -3846,6 +4147,17 @@
         button.addEventListener('click', () => {
           this._flushEditorUpdate();
           this._positionEditorOpen = false;
+          this._render();
+        });
+      });
+
+      this.shadowRoot.querySelectorAll('button[data-copy-positions]').forEach((button) => {
+        button.addEventListener('click', () => {
+          const target = button.dataset.positionTarget;
+          const sourceSelect = button.parentElement?.querySelector('select[data-position-copy-source]');
+          const source = sourceSelect?.value;
+          if (!source || !target || source === target) return;
+          this._copyScenePositions(source, target);
           this._render();
         });
       });
