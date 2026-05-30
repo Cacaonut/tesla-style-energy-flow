@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.27 - 2026-05-30
+
+- Added support for separate battery charge/discharge power entities and separate grid import/export entities
+- Added `ev_in_load` / `ev2_in_load` flags for whole-home meters so EV charging can be modeled correctly inside home load
+- Added `smoothing_seconds` with Tesla-style EWMA smoothing plus hysteresis to reduce flow color flicker and noisy power transitions
+- Improved performance by skipping unnecessary re-renders, pausing CSS animations when the card is off-screen, and memoizing background work
+- Upgraded the position editor to open on the active scene and added a `copy from scene` workflow
+- Fixed battery-to-grid plus battery-to-home simultaneous flow rendering and always show grid-to-battery charging flow when applicable
+- Improved EV line visibility and renewable charging styling on darker or busier backgrounds
+
 ## 0.3.26 - 2026-05-26
 
 - Added a visual scene-position editor with modal preview, drag handles, and compact X/Y controls

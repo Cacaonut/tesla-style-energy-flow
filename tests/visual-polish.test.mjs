@@ -213,7 +213,7 @@ assert.match(
 
 assert.match(
   source,
-  /<button type="button" class="position-open-button" data-open-position-editor>/,
+  /<button type="button" class="[^"]*position-open-button[^"]*" data-open-position-editor>/,
   'scene positions section should open the visual editor in a popup instead of embedding the full workspace'
 );
 
@@ -366,4 +366,3 @@ assert.match(
   /<rect class="flow-sky-dim" x="0" y="0" width="600" height="260"><\/rect>/,
   'the SVG should include a sky dimming layer so text remains readable on bright backgrounds'
 );
-
