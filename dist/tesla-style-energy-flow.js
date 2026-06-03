@@ -116,6 +116,9 @@
         position_field_scene: 'Scena',
         position_copy_from: 'Copia posizioni da',
         position_copy_button: 'Applica',
+        position_show_paths: 'Mostra tutte le linee',
+        position_hide_paths: 'Nascondi le linee',
+        position_paths_hint: 'Overlay statico di ogni linea di flusso per questa scena — verifica che ogni linea raggiunga i suoi nodi.',
         position_field_label: 'Etichetta',
         position_field_value: 'Valore',
         position_field_guide_a: 'Linea A',
@@ -201,6 +204,9 @@
         position_field_scene: 'Scene',
         position_copy_from: 'Copy positions from',
         position_copy_button: 'Apply',
+        position_show_paths: 'Show all flow paths',
+        position_hide_paths: 'Hide flow paths',
+        position_paths_hint: 'Static overlay of every flow line for this scene — check each line reaches its nodes.',
         position_field_label: 'Label',
         position_field_value: 'Value',
         position_field_guide_a: 'Guide A',
@@ -286,6 +292,9 @@
         position_field_scene: 'Escena',
         position_copy_from: 'Copiar posiciones de',
         position_copy_button: 'Aplicar',
+        position_show_paths: 'Mostrar todas las líneas',
+        position_hide_paths: 'Ocultar líneas',
+        position_paths_hint: 'Superposición estática de cada línea de flujo de esta escena — comprueba que cada línea llega a sus nodos.',
         position_field_label: 'Etiqueta',
         position_field_value: 'Valor',
         position_field_guide_a: 'Linea A',
@@ -371,6 +380,9 @@
         position_field_scene: 'Scene',
         position_copy_from: 'Copier positions depuis',
         position_copy_button: 'Appliquer',
+        position_show_paths: 'Afficher tous les flux',
+        position_hide_paths: 'Masquer les flux',
+        position_paths_hint: 'Superposition statique de chaque ligne de flux pour cette scène — vérifiez que chaque ligne atteint ses nœuds.',
         position_field_label: 'Etiquette',
         position_field_value: 'Valeur',
         position_field_guide_a: 'Repere A',
@@ -456,6 +468,9 @@
         position_field_scene: 'Szene',
         position_copy_from: 'Positionen kopieren von',
         position_copy_button: 'Übernehmen',
+        position_show_paths: 'Alle Flow-Linien zeigen',
+        position_hide_paths: 'Flow-Linien ausblenden',
+        position_paths_hint: 'Statisches Overlay aller Flow-Linien dieser Szene — prüfe, ob jede Linie ihre Knoten erreicht.',
         position_field_label: 'Beschriftung',
         position_field_value: 'Wert',
         position_field_guide_a: 'Linie A',
@@ -515,10 +530,24 @@
     'line-grid-battery': 'line_grid_battery'
   });
 
+  // Semantic colours for the editor's "show all flow paths" diagnostic overlay,
+  // matching how each line is coloured in the live card.
+  const PREVIEW_FLOW_COLOURS = Object.freeze({
+    'line-solar-load': 'flow-solar',
+    'line-solar-grid': 'flow-solar',
+    'line-solar-battery': 'flow-solar',
+    'line-grid-load': 'flow-grid',
+    'line-grid-battery': 'flow-grid',
+    'line-battery-load': 'flow-green',
+    'line-junction-home-load': 'flow-home',
+    'line-wallbox-ev': 'flow-green',
+    'line-wallbox-ev2': 'flow-green'
+  });
+
   const DAY_CLEAR_IDLE_PATHS = Object.freeze({
       'line-solar-load': 'M 351 292 L 352 338 L 352 338',
       'line-solar-grid': 'M 350 292 L 352 378 L 436 404',
-      'line-solar-battery': 'M 350 292 L 352 340 L 310 348',
+      'line-solar-battery': 'M 350 292 L 352 338 L 310 348',
       'line-grid-load': 'M 434 402 Q 434 402 351 375 Q 352 340 351 341',
       'line-grid-battery': 'M 352 338 L 310 348',
       'line-battery-load': 'M 310 348 Q 353 339 352 338',
@@ -530,7 +559,7 @@
   const DAY_CLEAR_CHARGING_PATHS = Object.freeze({
       'line-solar-load': 'M 351 292 L 352 338 L 352 338',
       'line-solar-grid': 'M 350 292 L 352 374 L 434 402',
-      'line-solar-battery': 'M 350 292 L 352 338 L 312 348',
+      'line-solar-battery': 'M 350 292 L 352 340 L 312 348',
       'line-grid-load': 'M 434 402 Q 434 402 351 375 Q 352 340 351 341',
       'line-grid-battery': 'M 352 340 L 312 348',
       'line-battery-load': 'M 310 348 Q 353 339 352 338',
@@ -542,9 +571,9 @@
   const DAY_CLEAR_DUAL_CHARGING_PATHS = Object.freeze({
       'line-solar-load': 'M 394 287 L 401 302 401 337',
       'line-solar-grid': 'M 401 341 L 400 378 476 402',
-      'line-solar-battery': 'M 400 337 L 389 341 354 348',
+      'line-solar-battery': 'M 400 337 L 398 338 L 355 347',
       'line-grid-load': 'M 490 407 Q 441 391 399 376 400 358 400 337',
-      'line-grid-battery': 'M 352 340 L 312 348',
+      'line-grid-battery': 'M 398 338 L 355 347',
       'line-battery-load': 'M 355 347 Q 383 342 398 338',
       'line-junction-home-load': 'M 401 338 Q 428 332 456 325',
       'line-wallbox-ev': 'M 203 323 Q 200 381 220 340',
@@ -560,9 +589,9 @@
     'scene_day_rain_idle.png': Object.freeze({
       'line-solar-load': 'M 351 292 L 352 338 L 352 338',
       'line-solar-grid': 'M 350 288 L 352 376 L 436 402',
-      'line-solar-battery': 'M 350 288 L 352 332 L 310 342',
+      'line-solar-battery': 'M 350 288 L 352 330 L 310 342',
       'line-grid-load': 'M 434 402 Q 434 402 351 375 Q 352 340 351 341',
-      'line-grid-battery': 'M 436 402 L 354 374',
+      'line-grid-battery': 'M 352 330 L 310 342',
       'line-battery-load': 'M 310 342 Q 352 334 352 330',
       'line-junction-home-load': 'M 350 332 Q 386 326 410 318',
       'line-wallbox-ev': 'M 164 314 Q 160 368 182 344',
@@ -571,9 +600,9 @@
     'scene_day_rain_charging.png': Object.freeze({
       'line-solar-load': 'M 380 272 L 382 316 L 436 304',
       'line-solar-grid': 'M 380 272 L 382 354 L 468 378',
-      'line-solar-battery': 'M 380 276 L 382 314 L 334 324',
+      'line-solar-battery': 'M 380 276 L 382 314 L 336 324',
       'line-grid-load': 'M 464 378 Q 464 376 382 354 Q 382 336 382 314',
-      'line-grid-battery': 'M 468 378 L 384 354',
+      'line-grid-battery': 'M 382 314 L 336 324',
       'line-battery-load': 'M 336 324 Q 368 318 382 314',
       'line-junction-home-load': 'M 382 314 Q 410 308 438 302',
       'line-wallbox-ev': 'M 174 296 Q 164 342 188 314',
@@ -582,9 +611,9 @@
     'scene_day_rain_dual_charging.png': Object.freeze({
       'line-solar-load': 'M 398 291 L 400 305 400 337',
       'line-solar-grid': 'M 400 336 L 399 378 497 411',
-      'line-solar-battery': 'M 401 337 L 385 341 356 347',
+      'line-solar-battery': 'M 401 337 L 401 338 L 354 348',
       'line-grid-load': 'M 532 420 Q 471 402 398 377 399 354 400 334',
-      'line-grid-battery': 'M 457 396 L 401 377',
+      'line-grid-battery': 'M 401 338 L 354 348',
       'line-battery-load': 'M 354 348 Q 380 342 401 338',
       'line-junction-home-load': 'M 400 337 Q 427 331 458 324',
       'line-wallbox-ev': 'M 204 322 Q 202 376 216 345',
@@ -593,9 +622,9 @@
     'scene_night_clear_idle.png': Object.freeze({
       'line-solar-load': 'M 351 292 L 352 338 L 352 338',
       'line-solar-grid': 'M 352 296 L 352 376 L 440 406',
-      'line-solar-battery': 'M 350 292 L 350 338 L 312 346',
+      'line-solar-battery': 'M 350 292 L 352 338 L 310 348',
       'line-grid-load': 'M 434 402 Q 434 402 351 375 Q 352 340 351 341',
-      'line-grid-battery': 'M 438 404 L 354 376',
+      'line-grid-battery': 'M 352 338 L 310 348',
       'line-battery-load': 'M 310 348 Q 353 339 352 338',
       'line-junction-home-load': 'M 354 338 Q 386 330 408 324',
       'line-wallbox-ev': 'M 164 322 Q 160 368 182 344',
@@ -604,9 +633,9 @@
     'scene_night_clear_charging.png': Object.freeze({
       'line-solar-load': 'M 376 278 L 382 322 L 432 312',
       'line-solar-grid': 'M 378 282 L 382 360 L 480 392',
-      'line-solar-battery': 'M 378 280 L 380 324 L 332 330',
+      'line-solar-battery': 'M 378 280 L 382 322 L 336 330',
       'line-grid-load': 'M 478 390 Q 454 384 382 360 Q 382 334 382 326',
-      'line-grid-battery': 'M 482 394 L 384 360',
+      'line-grid-battery': 'M 382 322 L 336 330',
       'line-battery-load': 'M 336 330 Q 380 324 382 322',
       'line-junction-home-load': 'M 382 322 Q 416 316 434 310',
       'line-wallbox-ev': 'M 192 304 Q 184 352 206 326',
@@ -615,9 +644,9 @@
     'scene_night_clear_dual_charging.png': Object.freeze({
       'line-solar-load': 'M 397 289 L 401 305 401 336',
       'line-solar-grid': 'M 400 337 L 400 378 480 401',
-      'line-solar-battery': 'M 402 336 L 380 341 355 347',
+      'line-solar-battery': 'M 402 336 L 400 336 L 353 346',
       'line-grid-load': 'M 511 413 Q 454 397 401 378 400 356 399 337',
-      'line-grid-battery': 'M 501 409 L 402 378',
+      'line-grid-battery': 'M 400 336 L 353 346',
       'line-battery-load': 'M 353 346 Q 383 340 400 336',
       'line-junction-home-load': 'M 402 336 Q 435 329 458 323',
       'line-wallbox-ev': 'M 204 321 Q 199 376 221 341',
@@ -626,9 +655,9 @@
     'scene_night_rain_idle.png': Object.freeze({
       'line-solar-load': 'M 351 292 L 352 338 L 352 338',
       'line-solar-grid': 'M 350 284 L 354 366 L 432 392',
-      'line-solar-battery': 'M 350 286 L 350 324 L 314 330',
+      'line-solar-battery': 'M 350 286 L 354 322 L 310 330',
       'line-grid-load': 'M 430 392 Q 432 394 356 366 Q 354 340 352 322',
-      'line-grid-battery': 'M 434 392 L 356 366',
+      'line-grid-battery': 'M 354 322 L 310 330',
       'line-battery-load': 'M 310 330 Q 354 322 354 322',
       'line-junction-home-load': 'M 352 324 Q 388 316 406 312',
       'line-wallbox-ev': 'M 166 310 Q 160 354 184 334',
@@ -637,9 +666,9 @@
     'scene_night_rain_charging.png': Object.freeze({
       'line-solar-load': 'M 351 292 L 352 338 L 352 338',
       'line-solar-grid': 'M 350 290 L 350 376 L 434 402',
-      'line-solar-battery': 'M 350 290 L 352 334 L 310 342',
+      'line-solar-battery': 'M 350 290 L 352 338 L 310 348',
       'line-grid-load': 'M 434 402 Q 434 402 351 375 Q 352 340 351 341',
-      'line-grid-battery': 'M 436 402 L 352 376',
+      'line-grid-battery': 'M 352 338 L 310 348',
       'line-battery-load': 'M 310 348 Q 353 339 352 338',
       'line-junction-home-load': 'M 352 334 Q 386 326 410 320',
       'line-wallbox-ev': 'M 164 314 Q 160 356 182 332',
@@ -648,9 +677,9 @@
     'scene_night_rain_dual_charging.png': Object.freeze({
       'line-solar-load': 'M 396 287 L 398 300 398 338',
       'line-solar-grid': 'M 399 340 L 398 376 470 400',
-      'line-solar-battery': 'M 399 336 L 400 338 357 347',
+      'line-solar-battery': 'M 399 336 L 401 337 L 355 347',
       'line-grid-load': 'M 504 409 Q 452 391 398 376 399 357 400 338',
-      'line-grid-battery': 'M 436 402 L 352 376',
+      'line-grid-battery': 'M 401 337 L 355 347',
       'line-battery-load': 'M 355 347 Q 382 342 401 337',
       'line-junction-home-load': 'M 401 336 Q 431 329 458 323',
       'line-wallbox-ev': 'M 204 322 Q 199 380 223 338',
@@ -2795,6 +2824,9 @@
       // Empty so _selectedPositionScene() falls back to the user's configured
       // background — opening the editor lands on the scene they actually see.
       this._positionSceneKey = '';
+      // Stufe-1 diagnostic: overlay all flow lines (static) on the preview so
+      // path geometry can be eyeballed per scene without live energy data.
+      this._showAllPaths = false;
     }
 
     setConfig(config) {
@@ -3133,10 +3165,28 @@
           <svg class="position-preview-svg" data-position-preview-svg data-position-scene-key="${this._escapeHtml(sceneKey)}" viewBox="0 0 600 460" preserveAspectRatio="xMidYMid meet">
             <image class="position-preview-image" href="${background}" x="0" y="0" width="600" height="460" preserveAspectRatio="xMidYMid slice"></image>
             <rect class="position-preview-dim" x="0" y="0" width="600" height="460"></rect>
+            ${this._showAllPaths ? this._positionPreviewFlowPaths(sceneKey) : ''}
             ${this._positionEditorGroups(sceneKey).map((group) => this._positionPreviewGroup(sceneKey, group)).join('')}
           </svg>
         </div>
       `;
+    }
+
+    // Stufe-1 diagnostic overlay: render every flow line for the scene as a
+    // static, colour-coded path so geometry (does each line reach its nodes?)
+    // can be verified without live data. pointer-events:none keeps the label
+    // drag grips usable, and the paths render before the groups so grips stay
+    // on top. Path resolution mirrors the card's _initialPathProfile exactly.
+    _positionPreviewFlowPaths(sceneKey) {
+      const configProfile = profileFromConfigPaths(this._config.paths);
+      const sceneProfile = deepMerge(SCENE_FLOW_PATH_MAP, this._config.scene_path_map || {})[sceneKey];
+      const profile = sceneProfile ? { ...configProfile, ...sceneProfile } : configProfile;
+      return Object.entries(FLOW_PATH_KEYS).map(([pathId, configKey]) => {
+        const d = profile[pathId] || DEFAULT_CONFIG.paths[configKey];
+        if (!d) return '';
+        const colourClass = PREVIEW_FLOW_COLOURS[pathId] || 'flow-home';
+        return `<path class="position-preview-flow ${colourClass}" d="${this._escapeHtml(d)}"></path>`;
+      }).join('');
     }
 
     _positionAxisInput(sceneKey, componentKey, attr, axis) {
@@ -3197,6 +3247,14 @@
           <button type="button" data-copy-positions data-position-target="${this._escapeHtml(selectedScene)}">
             ${this._t('editor.position_copy_button', 'Apply')}
           </button>
+        </div>
+        <div class="position-testpaths-row">
+          <button type="button" class="position-testpaths-button${this._showAllPaths ? ' is-active' : ''}" data-toggle-all-paths aria-pressed="${this._showAllPaths ? 'true' : 'false'}">
+            ${this._showAllPaths
+              ? this._t('editor.position_hide_paths', 'Hide flow paths')
+              : this._t('editor.position_show_paths', 'Show all flow paths')}
+          </button>
+          <span class="position-testpaths-hint">${this._t('editor.position_paths_hint', 'Static overlay of every flow line for this scene — check each line reaches its nodes.')}</span>
         </div>
         ${this._positionPreviewSvg(selectedScene)}
         <div class="position-groups${modalClass}">
@@ -3691,6 +3749,49 @@
             fill: #020817;
             opacity: 0.42;
           }
+          .position-testpaths-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 2px 0 8px;
+          }
+          .position-testpaths-button {
+            border: 1px solid rgba(56,189,248,0.45);
+            background: rgba(56,189,248,0.12);
+            color: #e2e8f0;
+            border-radius: 6px;
+            padding: 6px 12px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+          }
+          .position-testpaths-button:hover {
+            background: rgba(56,189,248,0.24);
+          }
+          .position-testpaths-button.is-active {
+            background: rgba(34,197,94,0.22);
+            border-color: rgba(34,197,94,0.6);
+          }
+          .position-testpaths-hint {
+            font-size: 12px;
+            opacity: 0.62;
+            flex: 1 1 180px;
+            min-width: 140px;
+          }
+          .position-preview-flow {
+            fill: none;
+            stroke-width: 2.4;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            pointer-events: none;
+            opacity: 0.96;
+            filter: drop-shadow(0 0 1px rgba(2,8,23,0.92)) drop-shadow(0 0 3px currentColor);
+          }
+          .position-preview-flow.flow-solar { stroke: #ffe066; color: #ffe066; }
+          .position-preview-flow.flow-grid { stroke: #ff5d73; color: #ff5d73; }
+          .position-preview-flow.flow-green { stroke: #4ade80; color: #4ade80; }
+          .position-preview-flow.flow-home { stroke: #cbd5e1; color: #cbd5e1; }
           .position-preview-guide {
             stroke: rgba(226,232,240,0.78);
             stroke-width: 1.5;
@@ -4158,6 +4259,13 @@
           const source = sourceSelect?.value;
           if (!source || !target || source === target) return;
           this._copyScenePositions(source, target);
+          this._render();
+        });
+      });
+
+      this.shadowRoot.querySelectorAll('button[data-toggle-all-paths]').forEach((button) => {
+        button.addEventListener('click', () => {
+          this._showAllPaths = !this._showAllPaths;
           this._render();
         });
       });
