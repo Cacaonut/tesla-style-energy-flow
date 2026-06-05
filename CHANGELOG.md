@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.28 - 2026-06-05
+
+- Fixed `grid -> battery` flow geometry so the charging line reaches the battery in all shipped scenes
+- Realigned `solar -> battery` paths so solar and grid converge cleanly onto the battery segment
+- Added a visual editor diagnostic overlay to show all scene flow paths with color-coded lines for geometry checks
+
 ## 0.3.27 - 2026-05-30
 
 - Added support for separate battery charge/discharge power entities and separate grid import/export entities
