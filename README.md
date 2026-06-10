@@ -155,6 +155,41 @@ For custom dual-EV scenes you can also override per-scene geometry through:
 - `scene_path_map`
 - `scene_component_map`
 
+## Troubleshooting
+
+### The grid → battery line disappears while the car is charging
+
+**Symptom:** the grid → battery flow line shows correctly while the car is *not*
+charging, but vanishes as soon as the EV starts charging — even though the grid is
+still charging the battery.
+
+**Cause:** your `load_power` sensor is a **whole-home / total-consumption meter**
+that *already includes the wallbox draw* (common with SolarEdge `power_consumption`,
+SMA SHM 2.0, and other house-level meters). When `ev_in_load` is left at its default
+(`false`), the EV draw is counted twice in the flow allocation — once inside the
+inflated home load and once as the separate EV path. The card allocates grid import
+to the home load and the EV *before* the battery, so during charging the grid-import
+budget is exhausted and the computed grid → battery flow drops to zero, hiding the line.
+
+**Fix:** tell the card the EV is already included in the load meter:
+
+```yaml
+ev_in_load: true        # set ev2_in_load: true as well if you have a second EV
+```
+
+The card then subtracts the EV power from `load_power` before allocating flows, so the
+grid → battery line stays visible while the car charges. Only set this if your load
+meter actually includes the wallbox — if you have a *dedicated* EV circuit that is **not**
+part of `load_power`, leave it `false`.
+
+### Grid / battery flow direction looks inverted
+
+Some inverters (e.g. SolarEdge) report the opposite sign from what the card expects.
+The card expects **positive = grid importing** and **positive = battery charging**.
+If a flow points the wrong way, add `grid_invert: true` and/or `battery_invert: true`,
+or use the separate `grid_import_power` / `grid_export_power` and
+`battery_charge_power` / `battery_discharge_power` entities.
+
 ## Screenshots
 
 Day clear (idle)
