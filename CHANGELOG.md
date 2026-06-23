@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.29 - 2026-06-23
+
+- Fixed a stutter on the grid → home flow line: the red grid/import dash pattern (40 + 96 = 136) did not match the 144-unit animation scroll, causing the dashes to jump back once per cycle (#27)
+
 ## 0.3.28 - 2026-06-05
 
 - Fixed `grid -> battery` flow geometry so the charging line reaches the battery in all shipped scenes
