@@ -366,3 +366,26 @@ assert.match(
   /<rect class="flow-sky-dim" x="0" y="0" width="600" height="260"><\/rect>/,
   'the SVG should include a sky dimming layer so text remains readable on bright backgrounds'
 );
+
+// Regression for #27 "Stutter from grid to home": the flowStream keyframe scrolls
+// stroke-dashoffset by a fixed distance every cycle, so a seamless loop requires the
+// dash period (--flow-seg + --flow-gap) of every flow colour to equal that distance.
+// flow-broken (the grid/import colour) used 40 + 96 = 136 while the offset is 144,
+// producing an 8-unit phase jump once per cycle — a visible stutter on the grid->home line.
+const flowStreamCycle = (() => {
+  const m = source.match(/@keyframes flowStream \{\s*to \{ stroke-dashoffset: -(\d+(?:\.\d+)?)/);
+  assert.ok(m, 'flowStream keyframe should define a stroke-dashoffset scroll distance');
+  return Number(m[1]);
+})();
+
+for (const colour of ['flow-solar', 'flow-green', 'flow-broken']) {
+  const block = source.match(new RegExp(`\\.flow-line\\.active\\.${colour} \\{([\\s\\S]*?)\\}`));
+  assert.ok(block, `${colour} flow-line rule should exist`);
+  const seg = Number(block[1].match(/--flow-seg:\s*(\d+(?:\.\d+)?)/)?.[1]);
+  const gap = Number(block[1].match(/--flow-gap:\s*(\d+(?:\.\d+)?)/)?.[1]);
+  assert.equal(
+    seg + gap,
+    flowStreamCycle,
+    `${colour} dash period (--flow-seg ${seg} + --flow-gap ${gap} = ${seg + gap}) must equal the flowStream scroll distance ${flowStreamCycle} so the dashes loop without stuttering`
+  );
+}

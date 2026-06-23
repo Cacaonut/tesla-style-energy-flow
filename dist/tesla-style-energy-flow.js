@@ -2385,7 +2385,9 @@
             stroke: #ff5d73;
             --flow-glow: rgba(255, 93, 115, 0.7);
             --flow-seg: 40;
-            --flow-gap: 96;
+            /* 40 + 104 = 144, matching the flowStream stroke-dashoffset cycle so the
+               grid/import dashes loop seamlessly instead of jumping every cycle (#27). */
+            --flow-gap: 104;
             --flow-speed: 1.35s;
             --flow-fade: 1.15s;
           }
