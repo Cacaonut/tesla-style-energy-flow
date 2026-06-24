@@ -1226,23 +1226,36 @@
     return raw;
   }
 
-  function toPct(entityState, fallback = 0) {
-    if (!entityState) return fallback;
+  // Reads a battery percentage from an entity's ATTRIBUTES only (never its
+  // .state). Used for entities whose state is not a percentage — e.g. an EV
+  // power sensor (whose state is watts) that nonetheless exposes a
+  // battery_level attribute. Returns NaN when no usable attribute is present.
+  function pctFromAttributes(entityState) {
+    const attrs = entityState?.attributes;
+    if (!attrs) return Number.NaN;
     const candidates = [
-      entityState.state,
-      entityState.attributes?.battery_level,
-      entityState.attributes?.battery,
-      entityState.attributes?.battery_percent,
-      entityState.attributes?.battery_percentage,
-      entityState.attributes?.raw_soc,
-      entityState.attributes?.percentage,
-      entityState.attributes?.level,
-      entityState.attributes?.usable_battery_level
+      attrs.battery_level,
+      attrs.battery,
+      attrs.battery_percent,
+      attrs.battery_percentage,
+      attrs.raw_soc,
+      attrs.percentage,
+      attrs.level,
+      attrs.usable_battery_level
     ];
     for (const candidate of candidates) {
       const parsed = safeNum(candidate, Number.NaN);
       if (Number.isFinite(parsed)) return clamp(parsed, 0, 100);
     }
+    return Number.NaN;
+  }
+
+  function toPct(entityState, fallback = 0) {
+    if (!entityState) return fallback;
+    const fromState = safeNum(entityState.state, Number.NaN);
+    if (Number.isFinite(fromState)) return clamp(fromState, 0, 100);
+    const fromAttrs = pctFromAttributes(entityState);
+    if (Number.isFinite(fromAttrs)) return fromAttrs;
     return clamp(fallback, 0, 100);
   }
 
@@ -1398,6 +1411,10 @@
       this._smoothState = {};
       this._pathLastActive = {};
       this._lastDominant = {};
+      this._elCache = new Map();
+      this._trackedIdsCache = null;
+      this._sceneFlowPathMapCache = null;
+      this._sceneFlowComponentMapCache = null;
     }
 
     setConfig(config) {
@@ -1412,6 +1429,11 @@
       this._smoothState = {};
       this._pathLastActive = {};
       this._lastDominant = {};
+      // Config-derived caches — invalidate so the next render rebuilds them.
+      this._elCache = new Map();
+      this._trackedIdsCache = null;
+      this._sceneFlowPathMapCache = null;
+      this._sceneFlowComponentMapCache = null;
       this._render();
     }
 
@@ -1429,8 +1451,12 @@
     }
 
     _trackedEntityIds() {
+      // Cached: set hass() fires on every state change in the whole instance,
+      // so this runs far more often than render. The id list only depends on
+      // config, which resets the cache in setConfig().
+      if (this._trackedIdsCache) return this._trackedIdsCache;
       const e = (this._config && this._config.entities) || {};
-      return [
+      this._trackedIdsCache = [
         e.solar_power,
         e.grid_power, e.grid_import_power, e.grid_export_power,
         e.battery_power, e.battery_charge_power, e.battery_discharge_power, e.battery_level,
@@ -1442,6 +1468,7 @@
         e.weather,
         e.sun || 'sun.sun',
       ].filter(Boolean);
+      return this._trackedIdsCache;
     }
 
     _hasTrackedHassChange(prev, next) {
@@ -1508,13 +1535,26 @@
       return `${(value / 1000).toFixed(1)} kW`;
     }
 
+    // Memoized shadow-DOM lookup. The static SVG is only (re)built in
+    // _renderStatic(), which clears this cache, so cached element refs stay
+    // valid for the lifetime of one rendered tree. Missing elements are not
+    // cached (re-queried each call), which is fine for the hot path.
+    _query(selector) {
+      if (!this._elCache) this._elCache = new Map();
+      const cached = this._elCache.get(selector);
+      if (cached && cached.isConnected) return cached;
+      const el = this.shadowRoot.querySelector(selector);
+      if (el) this._elCache.set(selector, el);
+      return el;
+    }
+
     _setText(id, value) {
-      const el = this.shadowRoot.querySelector(id);
-      if (el) el.textContent = value;
+      const el = this._query(id);
+      if (el && el.textContent !== value) el.textContent = value;
     }
 
     _toggleNode(id, active) {
-      const el = this.shadowRoot.querySelector(id);
+      const el = this._query(id);
       if (!el) return;
       const isActive = !!active;
       el.classList.toggle('active', isActive);
@@ -1537,7 +1577,7 @@
         delete this._pathLastActive[key];
         return;
       }
-      const el = this.shadowRoot.querySelector(`#${id}`);
+      const el = this._query(`#${id}`);
       if (!el) return;
       el.classList.add('active', cls);
       el.classList.toggle('flow-reverse', !!reverse);
@@ -1594,10 +1634,13 @@
     _isEvCharging(evData) {
       const evMinW = Math.max(0, safeNum(this._config.ev_min_w, 150));
       const vehicles = Array.isArray(evData?.vehicles) ? evData.vehicles : [];
-      if (vehicles.some((vehicle) => vehicle.hasPowerEntity)) {
-        return vehicles.some((vehicle) => vehicle.power > evMinW);
-      }
-      return vehicles.some((vehicle) => vehicle.switchOn);
+      // Decide per vehicle: one with a power sensor counts as charging when it
+      // draws above the threshold, a switch-only one when its switch is on. A
+      // single global power/switch split (the old behaviour) let a switch-only
+      // EV2 be ignored whenever ANY other vehicle exposed a power sensor.
+      return vehicles.some((vehicle) => (
+        vehicle.hasPowerEntity ? vehicle.power > evMinW : vehicle.switchOn
+      ));
     }
 
     _collectEvData() {
@@ -1627,11 +1670,15 @@
           const batteryState = this._entityState(slot.batteryEntity);
           const switchState = this._entityState(slot.chargeSwitchEntity);
           const presenceState = this._entityState(slot.presenceEntity);
+          // Only the dedicated battery entity may use its .state as a percentage.
+          // For power / presence / switch entities read battery_level-style
+          // ATTRIBUTES only — otherwise an EV power sensor reading e.g. 6200 W
+          // would be clamped to a bogus 100 % SoC.
           const batteryPct = [
             toPct(batteryState, Number.NaN),
-            toPct(powerState, Number.NaN),
-            toPct(presenceState, Number.NaN),
-            toPct(switchState, Number.NaN)
+            pctFromAttributes(powerState),
+            pctFromAttributes(presenceState),
+            pctFromAttributes(switchState)
           ].find((value) => Number.isFinite(value));
           const derivedLabel = (
             friendlyEntityName(powerState) ||
@@ -1743,12 +1790,21 @@
       return out;
     }
 
+    // Both maps only depend on the (immutable-per-config) scene overrides, yet
+    // they are read on every dynamic render. deepMerge rebuilds hundreds of
+    // nested objects each call, so memoize and invalidate in setConfig().
     _sceneFlowPathMap() {
-      return deepMerge(SCENE_FLOW_PATH_MAP, this._config.scene_path_map || {});
+      if (!this._sceneFlowPathMapCache) {
+        this._sceneFlowPathMapCache = deepMerge(SCENE_FLOW_PATH_MAP, this._config.scene_path_map || {});
+      }
+      return this._sceneFlowPathMapCache;
     }
 
     _sceneFlowComponentMap() {
-      return deepMerge(SCENE_FLOW_COMPONENT_MAP, this._config.scene_component_map || {});
+      if (!this._sceneFlowComponentMapCache) {
+        this._sceneFlowComponentMapCache = deepMerge(SCENE_FLOW_COMPONENT_MAP, this._config.scene_component_map || {});
+      }
+      return this._sceneFlowComponentMapCache;
     }
 
     _resolveBackground(evCharging, hasSecondaryEv = false) {
@@ -1760,7 +1816,14 @@
       // ops in _computeBackground are otherwise repeated identically each frame.
       const weatherState = this._entityState(cfg.entities.weather)?.state || '';
       const sunState = this._entityState(cfg.entities.sun || 'sun.sun')?.state || '';
-      const cacheKey = `${weatherState}|${sunState}|${evCharging ? 1 : 0}|${hasSecondaryEv ? 1 : 0}`;
+      // period and timeSlot are derived from the clock (when the sun entity is
+      // unavailable) and drive morning/afternoon/evening + day/night scene
+      // lookups, so they MUST be part of the cache key — otherwise the cached
+      // background stays stale across a slot/period boundary until weather, sun
+      // or EV state happens to change.
+      const period = this._scenePeriod(weatherState);
+      const timeSlot = this._sceneTimeSlot(period);
+      const cacheKey = `${weatherState}|${sunState}|${period}|${timeSlot}|${evCharging ? 1 : 0}|${hasSecondaryEv ? 1 : 0}`;
       if (this._bgCacheKey === cacheKey) return this._bgCacheValue;
 
       const result = this._computeBackground(evCharging, hasSecondaryEv, weatherState);
@@ -2139,6 +2202,8 @@
       const pathD = (id, configKey) => p[id] || cfg.paths?.[configKey] || DEFAULT_CONFIG.paths[configKey];
       this._lastAppliedSceneFlowProfile = '';
       this._lastAppliedSceneFlowComponentProfile = '';
+      // The previous element tree is about to be replaced — drop cached refs.
+      this._elCache = new Map();
 
       this.shadowRoot.innerHTML = `
         <style>
@@ -2566,7 +2631,12 @@
       }
       let loadPower = toWatt(this._entityState(cfg.entities.load_power));
       const batteryLevel = toPct(this._entityState(cfg.entities.battery_level), 0);
-      const batteryConfigured = !!(cfg.entities.battery_power || cfg.entities.battery_level);
+      const batteryConfigured = !!(
+        cfg.entities.battery_power ||
+        cfg.entities.battery_charge_power ||
+        cfg.entities.battery_discharge_power ||
+        cfg.entities.battery_level
+      );
       const evData = this._collectEvData();
 
       // Whole-home meters (SMA SHM 2.0, SolarEdge total_consumption, …) usually
