@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.30 - 2026-06-28
+
+- Fixed battery node visibility when only separate `battery_charge_power` and `battery_discharge_power` sensors are configured
+- Fixed EV charging detection in mixed setups so switch-only vehicles are still considered correctly
+- Fixed bogus EV `100%` battery readings when only power, presence, or switch entities are configured
+- Fixed stale dynamic backgrounds by including period and time-slot changes in the background cache key
+- Improved render hot-path performance with memoized scene maps, cached tracked entity IDs, and cached shadow DOM lookups
+
 ## 0.3.29 - 2026-06-23
 
 - Fixed a stutter on the grid → home flow line: the red grid/import dash pattern (40 + 96 = 136) did not match the 144-unit animation scroll, causing the dashes to jump back once per cycle (#27)
