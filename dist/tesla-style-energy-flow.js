@@ -2501,6 +2501,7 @@
                     <stop offset="100%" stop-color="#020817" stop-opacity="0.78"></stop>
                   </radialGradient>
                 </defs>
+                <image id="flow-scene-image" href="${cfg.background}" x="0" y="0" width="600" height="460" preserveAspectRatio="xMidYMid slice"></image>
 
                 <path id="line-solar-out" class="flow-line seq-1" d="${pathD('line-solar-out', 'line_solar_out')}"></path>
                 <path id="line-grid-out" class="flow-line seq-1" d="${pathD('line-grid-out', 'line_grid_out')}"></path>
