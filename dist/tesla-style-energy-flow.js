@@ -2197,8 +2197,8 @@
       const showLabelsClass = cfg.show_labels ? '' : 'hide-labels';
       const titleText = String(cfg.title || '');
       const titleHtml = (cfg.show_header !== false && titleText) ? `<div class="card-title">${titleText}</div>` : '';
-      const sceneScale = clamp(safeNum(cfg.scene_scale, 1), 0.6, 1.4);
-      const fontScale = clamp(safeNum(cfg.font_scale, 1), 0.75, 1.35);
+      const sceneScale = clamp(safeNum(cfg.scene_scale, 1), 0.5, 2);
+      const fontScale = clamp(safeNum(cfg.font_scale, 1), 0.5, 2);
       const pathD = (id, configKey) => p[id] || cfg.paths?.[configKey] || DEFAULT_CONFIG.paths[configKey];
       this._lastAppliedSceneFlowProfile = '';
       this._lastAppliedSceneFlowComponentProfile = '';
@@ -2501,11 +2501,6 @@
                     <stop offset="100%" stop-color="#020817" stop-opacity="0.78"></stop>
                   </radialGradient>
                 </defs>
-                <image id="flow-scene-image" href="${cfg.background}" x="0" y="0" width="600" height="460" preserveAspectRatio="xMidYMid slice"></image>
-                <rect class="flow-scene-dim" x="0" y="0" width="600" height="460"></rect>
-                <rect class="flow-sky-dim" x="0" y="0" width="600" height="260"></rect>
-                <rect class="flow-bottom-dim" x="0" y="230" width="600" height="230"></rect>
-                <rect class="flow-vignette" x="0" y="0" width="600" height="460"></rect>
 
                 <path id="line-solar-out" class="flow-line seq-1" d="${pathD('line-solar-out', 'line_solar_out')}"></path>
                 <path id="line-grid-out" class="flow-line seq-1" d="${pathD('line-grid-out', 'line_grid_out')}"></path>
