@@ -2469,7 +2469,7 @@
           }
           .flow-line.active.seq-2 {
             /* We delay the stream and the pulse by their respective variable lengths */
-            animation-delay: var(--flow-speed), var(--flow-fade);
+            animation-delay: calc(var(--flow-speed) / 2), calc(var(--flow-fade) / 2);
           }
           .hide-labels .flow-label,
           .hide-labels .flow-power,
