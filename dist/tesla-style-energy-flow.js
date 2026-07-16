@@ -1585,7 +1585,7 @@
     }
 
     _dominantFlowClass(id, solarW, batteryW, gridW, fallback) {
-      const values = { 'flow-solar': solarW, 'flow-green': batteryW, 'flow-broken': gridW };
+      const values = { 'flow-solar': solarW, 'flow-green': batteryW, 'flow-blue': gridW };
       // Raw winner this frame.
       let raw = fallback || 'flow-solar';
       let max = -Infinity;
@@ -2846,7 +2846,7 @@
         this._activatePath('line-grid-load', 'flow-green', batteryToGrid, Math.max(1, Math.min(gridMin, batteryMin)), true);
       } else {
         // Normal grid import (or both: grid import dominates, battery export is low/zero)
-        this._activatePath('line-grid-load', 'flow-broken', gridImportVisual, gridMin);
+        this._activatePath('line-grid-load', 'flow-blue', gridImportVisual, gridMin);
       }
       const battLoadThreshold = Math.max(1, Math.min(gridMin, batteryMin));
       this._activatePath('line-battery-load', 'flow-green', Math.max(battToLoad, batteryToGrid), battLoadThreshold);
@@ -2856,7 +2856,7 @@
       this._activatePath('line-junction-home-load', homeCls, homeTotal, homeMin);
 
       this._activatePath('line-solar-battery', 'flow-solar', solarToBattery, batteryMin);
-      this._activatePath('line-grid-battery', 'flow-broken', gridToBattery, batteryMin);
+      this._activatePath('line-grid-battery', 'flow-blue', gridToBattery, batteryMin);
       // line-solar-grid: only solar export; battery→grid is shown via line-battery-load + line-grid-load (reverse)
       this._activatePath('line-solar-grid', 'flow-solar', solarExport, Math.max(1, gridMin));
 
