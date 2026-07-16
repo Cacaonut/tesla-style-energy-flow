@@ -2446,6 +2446,14 @@
             --flow-speed: 1.9s;
             --flow-fade: 1.45s;
           }
+          .flow-line.active.flow-blue {
+            stroke: #4a7ede;
+            --flow-glow: rgba(74, 109, 222, 0.7);
+            --flow-seg: 62;
+            --flow-gap: 82;
+            --flow-speed: 1.9s;
+            --flow-fade: 1.45s;
+          }
           .flow-line.active.flow-broken {
             stroke: #ff5d73;
             --flow-glow: rgba(255, 93, 115, 0.7);
@@ -2850,7 +2858,7 @@
       this._activatePath('line-solar-battery', 'flow-solar', solarToBattery, batteryMin);
       this._activatePath('line-grid-battery', 'flow-broken', gridToBattery, batteryMin);
       // line-solar-grid: only solar export; battery→grid is shown via line-battery-load + line-grid-load (reverse)
-      this._activatePath('line-solar-grid', 'flow-green', solarExport, Math.max(1, gridMin));
+      this._activatePath('line-solar-grid', 'flow-solar', solarExport, Math.max(1, gridMin));
 
       const evTotal = solarToEv + battToEv + gridToEv;
       // Mirror the line-solar-grid convention (always green when solar
@@ -2862,9 +2870,7 @@
       const evRenewableShare = evTotal > 0
         ? (solarToEv + battToEv) / evTotal
         : 0;
-      const evCls = evRenewableShare >= 0.8
-        ? 'flow-green'
-        : this._dominantFlowClass('ev', solarToEv, battToEv, gridToEv, 'flow-green');
+      const evCls = this._dominantFlowClass('ev', solarToEv, battToEv, gridToEv, 'flow-blue');
       const ev1Share = evDraw > 0 ? ev1Draw / evDraw : 0;
       const ev2Share = evDraw > 0 ? ev2Draw / evDraw : 0;
       this._activatePath('line-wallbox-ev', evCls, evTotal * ev1Share, 1);
