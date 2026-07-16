@@ -1585,9 +1585,9 @@
     }
 
     _dominantFlowClass(id, solarW, batteryW, gridW, fallback) {
-      const values = { 'flow-solar': solarW, 'flow-green': batteryW, 'flow-blue': gridW };
+      const values = { 'flow-yellow': solarW, 'flow-green': batteryW, 'flow-blue': gridW };
       // Raw winner this frame.
-      let raw = fallback || 'flow-solar';
+      let raw = fallback || 'flow-blue';
       let max = -Infinity;
       for (const cls of Object.keys(values)) {
         if (values[cls] > max) { max = values[cls]; raw = cls; }
@@ -2426,43 +2426,29 @@
                     drop-shadow(0 0 0.6px rgba(2, 8, 23, 0.85))
                     drop-shadow(0 0 3px var(--flow-glow, rgba(125, 249, 255, 0.4)))
                     drop-shadow(0 0 12px var(--flow-glow, rgba(125, 249, 255, 0.4)));
+            --flow-seg: 40;
+            --flow-gap: 104;
+            --flow-speed: 1.9s;
+            --flow-fade: 1.45s;
           }
           .flow-line.active.flow-reverse {
             animation: flowStreamReverse var(--flow-speed, 1.9s) linear infinite, flowPulse var(--flow-fade, 1.45s) ease-in-out infinite;
           }
-          .flow-line.active.flow-solar {
+          .flow-line.active.flow-yellow {
             stroke: #ffe066;
             --flow-glow: rgba(255, 224, 102, 0.72);
-            --flow-seg: 62;
-            --flow-gap: 82;
-            --flow-speed: 1.9s;
-            --flow-fade: 1.45s;
           }
           .flow-line.active.flow-green {
             stroke: #4ade80;
             --flow-glow: rgba(74, 222, 128, 0.7);
-            --flow-seg: 62;
-            --flow-gap: 82;
-            --flow-speed: 1.9s;
-            --flow-fade: 1.45s;
           }
           .flow-line.active.flow-blue {
             stroke: #4a7ede;
             --flow-glow: rgba(74, 109, 222, 0.7);
-            --flow-seg: 62;
-            --flow-gap: 82;
-            --flow-speed: 1.9s;
-            --flow-fade: 1.45s;
           }
           .flow-line.active.flow-red {
             stroke: #ff5d73;
             --flow-glow: rgba(255, 93, 115, 0.7);
-            --flow-seg: 40;
-            /* 40 + 104 = 144, matching the flowStream stroke-dashoffset cycle so the
-               grid/import dashes loop seamlessly instead of jumping every cycle (#27). */
-            --flow-gap: 104;
-            --flow-speed: 1.35s;
-            --flow-fade: 1.15s;
           }
           .flow-line.active.seq-1 {
             animation-delay: 0s, 0s;
@@ -2776,7 +2762,7 @@
       this._toggleNode('#node-ev2-bg', (ev2.power || 0) > 0 || ev2.switchOn || ev2.present);
 
       this.shadowRoot.querySelectorAll('.flow-line').forEach((line) => {
-        line.classList.remove('active', 'flow-solar', 'flow-green', 'flow-red', 'flow-reverse');
+        line.classList.remove('active', 'flow-yellow', 'flow-green', 'flow-red', 'flow-reverse');
       });
 
       const solarPos = Math.max(0, solarPower);
@@ -2868,7 +2854,7 @@
       
       const col = this._dominantFlowClass('general', solarPos, batteryDischarge, gridImport, 'flow-blue');
 
-      this._activatePath('line-solar-out', 'flow-solar', solarPos, Math.max(1, gridMin));
+      this._activatePath('line-solar-out', 'flow-yellow', solarPos, Math.max(1, gridMin));
       this._activatePath('line-grid-out', 'flow-blue', gridImport, Math.max(1, gridMin));
       this._activatePath('line-grid-in', col, gridExport, gridMin);
       this._activatePath('line-battery-out', 'flow-green', batteryDischarge, batteryMin);
@@ -3876,7 +3862,7 @@
             opacity: 0.96;
             filter: drop-shadow(0 0 1px rgba(2,8,23,0.92)) drop-shadow(0 0 3px currentColor);
           }
-          .position-preview-flow.flow-solar { stroke: #ffe066; color: #ffe066; }
+          .position-preview-flow.flow-yellow { stroke: #ffe066; color: #ffe066; }
           .position-preview-flow.flow-grid { stroke: #ff5d73; color: #ff5d73; }
           .position-preview-flow.flow-green { stroke: #4ade80; color: #4ade80; }
           .position-preview-flow.flow-home { stroke: #cbd5e1; color: #cbd5e1; }
