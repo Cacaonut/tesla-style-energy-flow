@@ -1,3 +1,5 @@
+import { console } from "node:inspector/promises";
+
 /* Tesla Style Energy Flow
  * Public Home Assistant custom card with configurable sensors, background, and flow paths.
  */
@@ -2454,7 +2456,7 @@
             --flow-speed: 1.9s;
             --flow-fade: 1.45s;
           }
-          .flow-line.active.flow-broken {
+          .flow-line.active.flow-red {
             stroke: #ff5d73;
             --flow-glow: rgba(255, 93, 115, 0.7);
             --flow-seg: 40;
@@ -2514,6 +2516,7 @@
                 <rect class="flow-bottom-dim" x="0" y="230" width="600" height="230"></rect>
                 <rect class="flow-vignette" x="0" y="0" width="600" height="460"></rect>
 
+                <! --
                 <path id="line-solar-load" class="flow-line" d="${pathD('line-solar-load', 'line_solar_load')}"></path>
                 <path id="line-grid-load" class="flow-line" d="${pathD('line-grid-load', 'line_grid_load')}"></path>
                 <path id="line-battery-load" class="flow-line" d="${pathD('line-battery-load', 'line_battery_load')}"></path>
@@ -2523,6 +2526,16 @@
                 <path id="line-solar-grid" class="flow-line" d="${pathD('line-solar-grid', 'line_solar_grid')}"></path>
                 <path id="line-solar-battery" class="flow-line" d="${pathD('line-solar-battery', 'line_solar_battery')}"></path>
                 <path id="line-grid-battery" class="flow-line" d="${pathD('line-grid-battery', 'line_grid_battery')}"></path>
+                -- >
+
+                <path id="line-solar-out" class="flow-line" d="${pathD('line-solar-out', 'line_solar_out')}"></path>
+                <path id="line-grid-out" class="flow-line" d="${pathD('line-grid-out', 'line_grid_out')}"></path>
+                <path id="line-grid-in" class="flow-line" d="${pathD('line-grid-in', 'line_grid_in')}"></path>
+                <path id="line-battery-out" class="flow-line" d="${pathD('line-battery-out', 'line_battery_out')}"></path>
+                <path id="line-battery-in" class="flow-line" d="${pathD('line-battery-in', 'line_battery_in')}"></path>
+                <path id="line-wallbox-ev" class="flow-line" d="${pathD('line-wallbox-ev', 'line_wallbox_ev')}"></path>
+                <path id="line-wallbox-ev2" class="flow-line" d="${pathD('line-wallbox-ev2', 'line_wallbox_ev2')}"></path>
+                <path id="line-load-in" class="flow-line" d="${pathD('line-load-in', 'line_load_in')}"></path>
 
                 <g class="flow-node" transform="translate(286, 155)">
                   <circle class="flow-node-bg" id="node-solar-bg" cx="0" cy="0" r="5"></circle>
@@ -2770,7 +2783,7 @@
       this._toggleNode('#node-ev2-bg', (ev2.power || 0) > 0 || ev2.switchOn || ev2.present);
 
       this.shadowRoot.querySelectorAll('.flow-line').forEach((line) => {
-        line.classList.remove('active', 'flow-solar', 'flow-green', 'flow-broken', 'flow-reverse');
+        line.classList.remove('active', 'flow-solar', 'flow-green', 'flow-red', 'flow-reverse');
       });
 
       const solarPos = Math.max(0, solarPower);
@@ -2783,98 +2796,102 @@
       const ev1Draw = Math.max(0, ev1.power || 0);
       const ev2Draw = Math.max(0, ev2.power || 0);
 
-      const solarToLoad = Math.min(solarPos, loadPos);
-      const remainingLoad = Math.max(0, loadPos - solarToLoad);
+      // const solarToLoad = Math.min(solarPos, loadPos);
+      // const remainingLoad = Math.max(0, loadPos - solarToLoad);
 
-      let solarRemaining = Math.max(0, solarPos - solarToLoad);
-      let battDischargeRemaining = batteryDischarge;
-      let gridImportRemaining = gridImport;
+      // let solarRemaining = Math.max(0, solarPos - solarToLoad);
+      // let battDischargeRemaining = batteryDischarge;
+      // let gridImportRemaining = gridImport;
 
-      const solarToEv = Math.min(evDraw, solarRemaining);
-      solarRemaining = Math.max(0, solarRemaining - solarToEv);
-      let evRemaining = Math.max(0, evDraw - solarToEv);
+      // const solarToEv = Math.min(evDraw, solarRemaining);
+      // solarRemaining = Math.max(0, solarRemaining - solarToEv);
+      // let evRemaining = Math.max(0, evDraw - solarToEv);
 
-      const battToEv = Math.min(evRemaining, battDischargeRemaining);
-      battDischargeRemaining = Math.max(0, battDischargeRemaining - battToEv);
-      evRemaining = Math.max(0, evRemaining - battToEv);
+      // const battToEv = Math.min(evRemaining, battDischargeRemaining);
+      // battDischargeRemaining = Math.max(0, battDischargeRemaining - battToEv);
+      // evRemaining = Math.max(0, evRemaining - battToEv);
 
-      const gridToEv = Math.min(evRemaining, gridImportRemaining);
-      gridImportRemaining = Math.max(0, gridImportRemaining - gridToEv);
-      evRemaining = Math.max(0, evRemaining - gridToEv);
+      // const gridToEv = Math.min(evRemaining, gridImportRemaining);
+      // gridImportRemaining = Math.max(0, gridImportRemaining - gridToEv);
+      // evRemaining = Math.max(0, evRemaining - gridToEv);
 
-      const battToLoad = Math.min(remainingLoad, battDischargeRemaining);
-      battDischargeRemaining = Math.max(0, battDischargeRemaining - battToLoad);
-      let loadRemaining = Math.max(0, remainingLoad - battToLoad);
+      // const battToLoad = Math.min(remainingLoad, battDischargeRemaining);
+      // battDischargeRemaining = Math.max(0, battDischargeRemaining - battToLoad);
+      // let loadRemaining = Math.max(0, remainingLoad - battToLoad);
 
-      const gridToLoad = Math.min(loadRemaining, gridImportRemaining);
-      gridImportRemaining = Math.max(0, gridImportRemaining - gridToLoad);
-      loadRemaining = Math.max(0, loadRemaining - gridToLoad);
+      // const gridToLoad = Math.min(loadRemaining, gridImportRemaining);
+      // gridImportRemaining = Math.max(0, gridImportRemaining - gridToLoad);
+      // loadRemaining = Math.max(0, loadRemaining - gridToLoad);
 
-      let battChargeRemaining = batteryCharge;
-      const solarToBattery = Math.min(battChargeRemaining, solarRemaining);
-      battChargeRemaining = Math.max(0, battChargeRemaining - solarToBattery);
-      solarRemaining = Math.max(0, solarRemaining - solarToBattery);
+      // let battChargeRemaining = batteryCharge;
+      // const solarToBattery = Math.min(battChargeRemaining, solarRemaining);
+      // battChargeRemaining = Math.max(0, battChargeRemaining - solarToBattery);
+      // solarRemaining = Math.max(0, solarRemaining - solarToBattery);
 
-      const gridToBattery = Math.min(battChargeRemaining, gridImportRemaining);
-      gridImportRemaining = Math.max(0, gridImportRemaining - gridToBattery);
+      // const gridToBattery = Math.min(battChargeRemaining, gridImportRemaining);
+      // gridImportRemaining = Math.max(0, gridImportRemaining - gridToBattery);
 
-      const solarExport = Math.min(gridExport, solarRemaining);
-      const remainingGridExport = Math.max(0, gridExport - solarExport);
-      const batteryToGrid = Math.min(remainingGridExport, battDischargeRemaining);
+      // const solarExport = Math.min(gridExport, solarRemaining);
+      // const remainingGridExport = Math.max(0, gridExport - solarExport);
+      // const batteryToGrid = Math.min(remainingGridExport, battDischargeRemaining);
 
-      let gridToLoadVisual = gridToLoad;
-      const gridImportVisual = gridImport;
-      const gridExportVisual = gridExport;
-      // Fallback visuale: se il carico e sostenuto di fatto dalla rete ma il calcolo cade sotto soglia.
-      if (
-        !evCharging &&
-        gridToLoadVisual < gridMin &&
-        gridImport >= gridMin &&
-        loadPos >= homeMin &&
-        solarToLoad < solarMin &&
-        battToLoad < batteryMin
-      ) {
-        gridToLoadVisual = Math.min(gridImport, loadPos);
-      }
+      // let gridToLoadVisual = gridToLoad;
+      // const gridImportVisual = gridImport;
+      // const gridExportVisual = gridExport;
+      // // Fallback visuale: se il carico e sostenuto di fatto dalla rete ma il calcolo cade sotto soglia.
+      // if (
+      //   !evCharging &&
+      //   gridToLoadVisual < gridMin &&
+      //   gridImport >= gridMin &&
+      //   loadPos >= homeMin &&
+      //   solarToLoad < solarMin &&
+      //   battToLoad < batteryMin
+      // ) {
+      //   gridToLoadVisual = Math.min(gridImport, loadPos);
+      // }
 
-      this._activatePath('line-solar-load', 'flow-solar', solarToLoad, solarMin);
-      // line-grid-load: forward = grid imports to home junction; reverse = battery exports via junction to grid.
-      // Only activate one direction at a time to avoid the two calls overwriting each other's flow-reverse flag.
-      if (batteryToGrid >= Math.max(1, Math.min(gridMin, batteryMin)) && gridImportVisual < gridMin) {
-        // Battery is exporting to grid and grid is NOT simultaneously importing above threshold:
-        // show battery→junction→grid (reverse on this path)
-        this._activatePath('line-grid-load', 'flow-green', batteryToGrid, Math.max(1, Math.min(gridMin, batteryMin)), true);
-      } else {
-        // Normal grid import (or both: grid import dominates, battery export is low/zero)
-        this._activatePath('line-grid-load', 'flow-blue', gridImportVisual, gridMin);
-      }
-      const battLoadThreshold = Math.max(1, Math.min(gridMin, batteryMin));
-      this._activatePath('line-battery-load', 'flow-green', Math.max(battToLoad, batteryToGrid), battLoadThreshold);
+      // this._activatePath('line-solar-load', 'flow-solar', solarToLoad, solarMin);
+      // // line-grid-load: forward = grid imports to home junction; reverse = battery exports via junction to grid.
+      // // Only activate one direction at a time to avoid the two calls overwriting each other's flow-reverse flag.
+      // if (batteryToGrid >= Math.max(1, Math.min(gridMin, batteryMin)) && gridImportVisual < gridMin) {
+      //   // Battery is exporting to grid and grid is NOT simultaneously importing above threshold:
+      //   // show battery→junction→grid (reverse on this path)
+      //   this._activatePath('line-grid-load', 'flow-green', batteryToGrid, Math.max(1, Math.min(gridMin, batteryMin)), true);
+      // } else {
+      //   // Normal grid import (or both: grid import dominates, battery export is low/zero)
+      //   this._activatePath('line-grid-load', 'flow-blue', gridImportVisual, gridMin);
+      // }
+      // const battLoadThreshold = Math.max(1, Math.min(gridMin, batteryMin));
+      // this._activatePath('line-battery-load', 'flow-green', Math.max(battToLoad, batteryToGrid), battLoadThreshold);
 
-      const homeTotal = solarToLoad + battToLoad + gridToLoadVisual;
-      const homeCls = this._dominantFlowClass('home', solarToLoad, battToLoad, gridToLoadVisual, 'flow-solar');
-      this._activatePath('line-junction-home-load', homeCls, homeTotal, homeMin);
+      // const homeTotal = solarToLoad + battToLoad + gridToLoadVisual;
+      // const homeCls = this._dominantFlowClass('home', solarToLoad, battToLoad, gridToLoadVisual, 'flow-solar');
+      // this._activatePath('line-junction-home-load', homeCls, homeTotal, homeMin);
 
-      this._activatePath('line-solar-battery', 'flow-solar', solarToBattery, batteryMin);
-      this._activatePath('line-grid-battery', 'flow-blue', gridToBattery, batteryMin);
-      // line-solar-grid: only solar export; battery→grid is shown via line-battery-load + line-grid-load (reverse)
-      this._activatePath('line-solar-grid', 'flow-solar', solarExport, Math.max(1, gridMin));
+      // this._activatePath('line-solar-battery', 'flow-solar', solarToBattery, batteryMin);
+      // this._activatePath('line-grid-battery', 'flow-blue', gridToBattery, batteryMin);
+      // // line-solar-grid: only solar export; battery→grid is shown via line-battery-load + line-grid-load (reverse)
+      // this._activatePath('line-solar-grid', 'flow-solar', solarExport, Math.max(1, gridMin));
+      
+      const col = this._dominantFlowClass('general', solarToEv, battToEv, gridToEv, 'flow-blue');
 
-      const evTotal = solarToEv + battToEv + gridToEv;
+      this._activatePath('line-solar-out', 'flow-solar', solarPos, Math.max(1, gridMin));
+      this._activatePath('line-grid-out', 'flow-blue', gridImport, Math.max(1, gridMin));
+      this._activatePath('line-grid-in', col, gridExport, gridMin);
+      this._activatePath('line-battery-out', 'flow-green', batteryDischarge, batteryMin);
+      this._activatePath('line-battery-in', col, batteryCharge, batteryMin);
+      this._activatePath('line-load-in', col, loadPos, homeMin);
+
       // Mirror the line-solar-grid convention (always green when solar
       // exports to grid because it's semantically positive) for EV charging:
       // when >= 80 % of the wallbox draw comes from renewable sources
       // (solar direct + battery), paint the line green regardless of which
       // single source happens to be largest. Below that threshold fall back
       // to the source-dominant color (yellow / green / red).
-      const evRenewableShare = evTotal > 0
-        ? (solarToEv + battToEv) / evTotal
-        : 0;
-      const evCls = this._dominantFlowClass('ev', solarToEv, battToEv, gridToEv, 'flow-blue');
       const ev1Share = evDraw > 0 ? ev1Draw / evDraw : 0;
       const ev2Share = evDraw > 0 ? ev2Draw / evDraw : 0;
-      this._activatePath('line-wallbox-ev', evCls, evTotal * ev1Share, 1);
-      this._activatePath('line-wallbox-ev2', evCls, evTotal * ev2Share, 1);
+      this._activatePath('line-wallbox-ev', col, evDraw * ev1Share, 1);
+      this._activatePath('line-wallbox-ev2', col, evDraw * ev2Share, 1);
     }
 
     _render() {
