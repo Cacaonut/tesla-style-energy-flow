@@ -1,5 +1,3 @@
-import { console } from "node:inspector/promises";
-
 /* Tesla Style Energy Flow
  * Public Home Assistant custom card with configurable sensors, background, and flow paths.
  */
