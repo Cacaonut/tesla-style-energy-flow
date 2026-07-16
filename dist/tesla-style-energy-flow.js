@@ -2871,7 +2871,7 @@
       // // line-solar-grid: only solar export; battery→grid is shown via line-battery-load + line-grid-load (reverse)
       // this._activatePath('line-solar-grid', 'flow-solar', solarExport, Math.max(1, gridMin));
       
-      const col = this._dominantFlowClass('general', solarToEv, battToEv, gridToEv, 'flow-blue');
+      const col = this._dominantFlowClass('general', solarPos, batteryDischarge, gridImport, 'flow-blue');
 
       this._activatePath('line-solar-out', 'flow-solar', solarPos, Math.max(1, gridMin));
       this._activatePath('line-grid-out', 'flow-blue', gridImport, Math.max(1, gridMin));
