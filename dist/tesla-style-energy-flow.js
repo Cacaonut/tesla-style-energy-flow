@@ -2533,8 +2533,7 @@
                 <path id="line-battery-in" class="flow-line" d="${pathD('line-battery-in', 'line_battery_in')}"></path>
                 <path id="line-wallbox-ev" class="flow-line" d="${pathD('line-wallbox-ev', 'line_wallbox_ev')}"></path>
                 <path id="line-wallbox-ev2" class="flow-line" d="${pathD('line-wallbox-ev2', 'line_wallbox_ev2')}"></path>
-                <path id="line-load-from-solar" class="flow-line" d="${pathD('line-load-from-solar', 'line_load_from_solar')}"></path>
-                <path id="line-load-from-grid" class="flow-line" d="${pathD('line-load-from-grid', 'line_load_from_grid')}"></path>
+                <path id="line-load-in" class="flow-line" d="${pathD('line-load-in', 'line_load_in')}"></path>
 
                 <g class="flow-node" transform="translate(286, 155)">
                   <circle class="flow-node-bg" id="node-solar-bg" cx="0" cy="0" r="5"></circle>
@@ -2879,8 +2878,7 @@
       this._activatePath('line-grid-in', col, gridExport, gridMin);
       this._activatePath('line-battery-out', 'flow-green', batteryDischarge, batteryMin);
       this._activatePath('line-battery-in', col, batteryCharge, batteryMin);
-      this._activatePath('line-load-from-solar', 'flow-solar', loadPos * (solarPos > 0), homeMin);
-      this._activatePath('line-load-from-grid', 'flow-blue', loadPos * (gridImport > 0), homeMin);
+      this._activatePath('line-load-in', col, loadPos, homeMin);
 
       // Mirror the line-solar-grid convention (always green when solar
       // exports to grid because it's semantically positive) for EV charging:
