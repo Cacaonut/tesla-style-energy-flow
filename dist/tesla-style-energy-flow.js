@@ -2433,10 +2433,10 @@
           .flow-line.active.flow-solar {
             stroke: #ffe066;
             --flow-glow: rgba(255, 224, 102, 0.72);
-            --flow-seg: 64;
-            --flow-gap: 80;
-            --flow-speed: 1.75s;
-            --flow-fade: 1.35s;
+            --flow-seg: 62;
+            --flow-gap: 82;
+            --flow-speed: 1.9s;
+            --flow-fade: 1.45s;
           }
           .flow-line.active.flow-green {
             stroke: #4ade80;
@@ -2463,6 +2463,13 @@
             --flow-gap: 104;
             --flow-speed: 1.35s;
             --flow-fade: 1.15s;
+          }
+          .flow-line.active.seq-1 {
+            animation-delay: 0s, 0s;
+          }
+          .flow-line.active.seq-2 {
+            /* We delay the stream and the pulse by their respective variable lengths */
+            animation-delay: var(--flow-speed), var(--flow-fade);
           }
           .hide-labels .flow-label,
           .hide-labels .flow-power,
@@ -2514,26 +2521,14 @@
                 <rect class="flow-bottom-dim" x="0" y="230" width="600" height="230"></rect>
                 <rect class="flow-vignette" x="0" y="0" width="600" height="460"></rect>
 
-                <! --
-                <path id="line-solar-load" class="flow-line" d="${pathD('line-solar-load', 'line_solar_load')}"></path>
-                <path id="line-grid-load" class="flow-line" d="${pathD('line-grid-load', 'line_grid_load')}"></path>
-                <path id="line-battery-load" class="flow-line" d="${pathD('line-battery-load', 'line_battery_load')}"></path>
-                <path id="line-junction-home-load" class="flow-line" d="${pathD('line-junction-home-load', 'line_junction_home_load')}"></path>
-                <path id="line-wallbox-ev" class="flow-line" d="${pathD('line-wallbox-ev', 'line_wallbox_ev')}"></path>
-                <path id="line-wallbox-ev2" class="flow-line" d="${pathD('line-wallbox-ev2', 'line_wallbox_ev2')}"></path>
-                <path id="line-solar-grid" class="flow-line" d="${pathD('line-solar-grid', 'line_solar_grid')}"></path>
-                <path id="line-solar-battery" class="flow-line" d="${pathD('line-solar-battery', 'line_solar_battery')}"></path>
-                <path id="line-grid-battery" class="flow-line" d="${pathD('line-grid-battery', 'line_grid_battery')}"></path>
-                -- >
-
-                <path id="line-solar-out" class="flow-line" d="${pathD('line-solar-out', 'line_solar_out')}"></path>
-                <path id="line-grid-out" class="flow-line" d="${pathD('line-grid-out', 'line_grid_out')}"></path>
-                <path id="line-grid-in" class="flow-line" d="${pathD('line-grid-in', 'line_grid_in')}"></path>
-                <path id="line-battery-out" class="flow-line" d="${pathD('line-battery-out', 'line_battery_out')}"></path>
-                <path id="line-battery-in" class="flow-line" d="${pathD('line-battery-in', 'line_battery_in')}"></path>
-                <path id="line-wallbox-ev" class="flow-line" d="${pathD('line-wallbox-ev', 'line_wallbox_ev')}"></path>
-                <path id="line-wallbox-ev2" class="flow-line" d="${pathD('line-wallbox-ev2', 'line_wallbox_ev2')}"></path>
-                <path id="line-load-in" class="flow-line" d="${pathD('line-load-in', 'line_load_in')}"></path>
+                <path id="line-solar-out" class="flow-line seq-1" d="${pathD('line-solar-out', 'line_solar_out')}"></path>
+                <path id="line-grid-out" class="flow-line seq-1" d="${pathD('line-grid-out', 'line_grid_out')}"></path>
+                <path id="line-grid-in" class="flow-line seq-2" d="${pathD('line-grid-in', 'line_grid_in')}"></path>
+                <path id="line-battery-out" class="flow-line seq-1" d="${pathD('line-battery-out', 'line_battery_out')}"></path>
+                <path id="line-battery-in" class="flow-line seq-2" d="${pathD('line-battery-in', 'line_battery_in')}"></path>
+                <path id="line-wallbox-ev" class="flow-line seq-2" d="${pathD('line-wallbox-ev', 'line_wallbox_ev')}"></path>
+                <path id="line-wallbox-ev2" class="flow-line seq-2" d="${pathD('line-wallbox-ev2', 'line_wallbox_ev2')}"></path>
+                <path id="line-load-in" class="flow-line seq-2" d="${pathD('line-load-in', 'line_load_in')}"></path>
 
                 <g class="flow-node" transform="translate(286, 155)">
                   <circle class="flow-node-bg" id="node-solar-bg" cx="0" cy="0" r="5"></circle>
