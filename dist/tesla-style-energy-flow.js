@@ -1578,6 +1578,7 @@
         maxPoints[3][0] = maxPoints[0][0] + scaledX;
         maxPoints[2][0] = maxPoints[1][0] + scaledX;
       }
+      console.debug(`_scaleBattery(${id}, ${pct}) => points:`, maxPoints);
       el.setAttribute('points', maxPoints.map(([x, y]) => `${x},${y}`).join(' '));
     }
 
