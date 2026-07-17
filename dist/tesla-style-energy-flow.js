@@ -2252,7 +2252,6 @@
             width: 100%;
             height: auto;
             display: block;
-            border-radius: 16px;
             border: 0;
             background: #020617;
           }
