@@ -1565,6 +1565,7 @@
     _scaleBattery(id, pct, maxPoints = [[284,348], [306,342.5], [306,389.5], [284,395]], scaleDir = 'y') {
       const clamped = clamp(pct, 0, 100);
       const el = this._query(id);
+      console.debug(`_scaleBattery(${id}, ${pct}) => clamped: ${clamped}, el:`, el);
       if (!el) return;
 
       if (scaleDir === 'y') {
