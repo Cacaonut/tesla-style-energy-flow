@@ -1565,7 +1565,7 @@
     _scaleBattery(id, pct, maxPoints = [[284,348], [306,342.5], [306,389.5], [284,395]], scaleDir = 'y') {
       const clamped = clamp(pct, 0, 100);
       const el = this._query(id);
-      console.log(`_scaleBattery(${id}, ${pct}) => clamped: ${clamped}, el:`, el);
+      // console.log(`_scaleBattery(${id}, ${pct}) => clamped: ${clamped}, el:`, el);
       if (!el) return;
 
       if (scaleDir === 'y') {
@@ -1579,7 +1579,7 @@
         maxPoints[3][0] = maxPoints[0][0] + scaledX;
         maxPoints[2][0] = maxPoints[1][0] + scaledX;
       }
-      console.log(`_scaleBattery(${id}, ${pct}) => points:`, maxPoints);
+      // console.log(`_scaleBattery(${id}, ${pct}) => points:`, maxPoints);
       el.setAttribute('points', maxPoints.map(([x, y]) => `${x},${y}`).join(' '));
     }
 
