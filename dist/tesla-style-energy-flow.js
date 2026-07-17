@@ -1562,6 +1562,25 @@
       if (group) group.classList.toggle('inactive', !isActive);
     }
 
+    _scaleBattery(id, pct, maxPoints = [[284,348], [306,342.5], [306,389.5], [284,395]], scaleDir = 'y') {
+      const clamped = clamp(pct, 0, 100);
+      const el = this._query(id);
+      if (!el) return;
+
+      if (scaleDir === 'y') {
+        const totalHeight = maxPoints[3][1] - maxPoints[0][1];
+        const scaledY = (100 - clamped) * 0.01 * totalHeight;
+        maxPoints[3][1] = maxPoints[0][1] + scaledY;
+        maxPoints[2][1] = maxPoints[1][1] + scaledY;
+      } else {
+        const totalWidth = maxPoints[3][0] - maxPoints[0][0];
+        const scaledX = (100 - clamped) * 0.01 * totalWidth;
+        maxPoints[3][0] = maxPoints[0][0] + scaledX;
+        maxPoints[2][0] = maxPoints[1][0] + scaledX;
+      }
+      el.setAttribute('points', maxPoints.map(([x, y]) => `${x},${y}`).join(' '));
+    }
+
     _activatePath(id, cls, watt, minW = FLOW_MIN_W, reverse = false) {
       const key = id + '|' + cls;
       if (watt <= 0) {
@@ -2507,6 +2526,8 @@
                 <rect class="flow-bottom-dim" x="0" y="230" width="600" height="230"></rect>
                 <rect class="flow-vignette" x="0" y="0" width="600" height="460"></rect>
 
+                <polygon id="polygon-battery-soc" points="284,348 306,342.5 306,389.5 284,395" fill="rgba(74, 222, 128, 0.7)" stroke="darkslategray" stroke-width="0"></polygon>
+
                 <path id="line-solar-out" class="flow-line seq-1" d="${pathD('line-solar-out', 'line_solar_out')}"></path>
                 <path id="line-grid-out" class="flow-line seq-1" d="${pathD('line-grid-out', 'line_grid_out')}"></path>
                 <path id="line-grid-in" class="flow-line seq-2" d="${pathD('line-grid-in', 'line_grid_in')}"></path>
@@ -2871,6 +2892,8 @@
       const ev2Share = evDraw > 0 ? ev2Draw / evDraw : 0;
       this._activatePath('line-wallbox-ev', col, evDraw * ev1Share, 1);
       this._activatePath('line-wallbox-ev2', col, evDraw * ev2Share, 1);
+
+      this._scaleBattery('polygon-battery-soc', batteryLevel);
     }
 
     _render() {
