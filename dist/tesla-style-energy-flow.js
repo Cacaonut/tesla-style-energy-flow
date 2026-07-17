@@ -1565,21 +1565,21 @@
     _scaleBattery(id, pct, maxPoints = [[284,348], [306,342.5], [306,389.5], [284,395]], scaleDir = 'y') {
       const clamped = clamp(pct, 0, 100);
       const el = this._query(id);
-      console.debug(`_scaleBattery(${id}, ${pct}) => clamped: ${clamped}, el:`, el);
+      console.log(`_scaleBattery(${id}, ${pct}) => clamped: ${clamped}, el:`, el);
       if (!el) return;
 
       if (scaleDir === 'y') {
         const totalHeight = maxPoints[3][1] - maxPoints[0][1];
-        const scaledY = (100 - clamped) * 0.01 * totalHeight;
-        maxPoints[3][1] = maxPoints[0][1] + scaledY;
-        maxPoints[2][1] = maxPoints[1][1] + scaledY;
+        const scaledY = clamped * 0.01 * totalHeight;
+        maxPoints[0][1] = maxPoints[3][1] - scaledY;
+        maxPoints[1][1] = maxPoints[2][1] - scaledY;
       } else {
         const totalWidth = maxPoints[3][0] - maxPoints[0][0];
-        const scaledX = (100 - clamped) * 0.01 * totalWidth;
+        const scaledX = clamped * 0.01 * totalWidth;
         maxPoints[3][0] = maxPoints[0][0] + scaledX;
         maxPoints[2][0] = maxPoints[1][0] + scaledX;
       }
-      console.debug(`_scaleBattery(${id}, ${pct}) => points:`, maxPoints);
+      console.log(`_scaleBattery(${id}, ${pct}) => points:`, maxPoints);
       el.setAttribute('points', maxPoints.map(([x, y]) => `${x},${y}`).join(' '));
     }
 
@@ -2895,7 +2895,7 @@
       this._activatePath('line-wallbox-ev', col, evDraw * ev1Share, 1);
       this._activatePath('line-wallbox-ev2', col, evDraw * ev2Share, 1);
 
-      this._scaleBattery('polygon-battery-soc', batteryLevel);
+      this._scaleBattery('#polygon-battery-soc', batteryLevel);
     }
 
     _render() {
