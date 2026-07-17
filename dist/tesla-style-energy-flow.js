@@ -1600,7 +1600,7 @@
       // }
       const el = this._query(`#${id}`);
       if (!el) return;
-      if (watt < threshold) {
+      if (watt < minW) {
         el.classList.remove('active', cls);
       } else {
         el.classList.add('active', cls);
