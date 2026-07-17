@@ -2377,7 +2377,7 @@
           .flow-node.inactive .flow-arrow,
           .flow-node.inactive .flow-status {
             fill: rgba(148, 163, 184, 0.72) !important;
-            opacity: 0.45;
+            opacity: 0;
             text-shadow: none;
             filter: none;
           }
@@ -2409,7 +2409,7 @@
           .flow-line {
             fill: none;
             stroke: rgba(191, 219, 254, 0.22);
-            stroke-width: 1.95;
+            stroke-width: 0;
             opacity: 0;
             stroke-linecap: round;
             stroke-linejoin: round;
@@ -2475,9 +2475,9 @@
             to { stroke-dashoffset: 144; }
           }
           @keyframes flowPulse {
-            0%, 100% { opacity: 0.85; stroke-width: 2.4; }
-            45% { opacity: 1; stroke-width: 3.3; }
-            82% { opacity: 0.92; stroke-width: 2.8; }
+            0%, 100% { opacity: 0.85; stroke-width: 2.9; }
+            45% { opacity: 1; stroke-width: 4; }
+            82% { opacity: 0.92; stroke-width: 3.35; }
           }
         </style>
         <ha-card>
