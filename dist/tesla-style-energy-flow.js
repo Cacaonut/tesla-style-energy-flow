@@ -1584,25 +1584,28 @@
     }
 
     _activatePath(id, cls, watt, minW = FLOW_MIN_W, reverse = false) {
-      const key = id + '|' + cls;
-      if (watt <= 0) {
-        delete this._pathLastActive[key];
-        return;
-      }
-      // Hysteresis: once a path is active, keep it active until the value drops
-      // below half the activation threshold. Prevents on/off flicker for flows
-      // hovering near the minW boundary (e.g. battery at 60 W with minW 50 W).
-      const wasActive = !!this._pathLastActive[key];
-      const threshold = wasActive ? minW * 0.5 : minW;
-      if (watt < threshold) {
-        delete this._pathLastActive[key];
-        return;
-      }
+      // const key = id + '|' + cls;
+      // if (watt <= 0) {
+      //   delete this._pathLastActive[key];
+      //   return;
+      // }
+      // // Hysteresis: once a path is active, keep it active until the value drops
+      // // below half the activation threshold. Prevents on/off flicker for flows
+      // // hovering near the minW boundary (e.g. battery at 60 W with minW 50 W).
+      // const wasActive = !!this._pathLastActive[key];
+      // const threshold = wasActive ? minW * 0.5 : minW;
+      // if (watt < threshold) {
+      //   delete this._pathLastActive[key];
+      //   return;
+      // }
       const el = this._query(`#${id}`);
       if (!el) return;
-      el.classList.add('active', cls);
+      if (watt < threshold) {
+        el.classList.remove('active', cls);
+      } else {
+        el.classList.add('active', cls);
+      }
       el.classList.toggle('flow-reverse', !!reverse);
-      this._pathLastActive[key] = true;
     }
 
     _dominantFlowClass(id, solarW, batteryW, gridW, fallback) {
@@ -1613,18 +1616,19 @@
       for (const cls of Object.keys(values)) {
         if (values[cls] > max) { max = values[cls]; raw = cls; }
       }
-      // Hysteresis: when two sources are similar (e.g. battery 800 W and grid
-      // 820 W feeding the home node), strict comparison flips the color every
-      // render. Stay on the previous winner unless the new candidate exceeds
-      // it by 15 %. id is per-line ('home', 'ev') so the two lines track
-      // independently.
-      const STICK_MARGIN = 1.15;
-      const last = this._lastDominant[id];
-      if (!last || last === raw || values[raw] > values[last] * STICK_MARGIN) {
-        this._lastDominant[id] = raw;
-        return raw;
-      }
-      return last;
+      // // Hysteresis: when two sources are similar (e.g. battery 800 W and grid
+      // // 820 W feeding the home node), strict comparison flips the color every
+      // // render. Stay on the previous winner unless the new candidate exceeds
+      // // it by 15 %. id is per-line ('home', 'ev') so the two lines track
+      // // independently.
+      // const STICK_MARGIN = 1.15;
+      // const last = this._lastDominant[id];
+      // if (!last || last === raw || values[raw] > values[last] * STICK_MARGIN) {
+      //   this._lastDominant[id] = raw;
+      //   return raw;
+      // }
+      // return last;
+      return raw;
     }
 
     // Time-based EWMA. Called once per render per smoothed channel. Since the
@@ -2783,9 +2787,9 @@
       this._toggleNode('#node-ev-bg', (ev1.power || 0) > 0 || ev1.switchOn || ev1.present);
       this._toggleNode('#node-ev2-bg', (ev2.power || 0) > 0 || ev2.switchOn || ev2.present);
 
-      this.shadowRoot.querySelectorAll('.flow-line').forEach((line) => {
-        line.classList.remove('active', 'flow-yellow', 'flow-green', 'flow-red', 'flow-reverse');
-      });
+      // this.shadowRoot.querySelectorAll('.flow-line').forEach((line) => {
+      //   line.classList.remove('active', 'flow-yellow', 'flow-green', 'flow-red', 'flow-reverse');
+      // });
 
       const solarPos = Math.max(0, solarPower);
       const loadPos = Math.max(0, loadPower);
